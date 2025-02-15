@@ -5,7 +5,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-typedef enum { ID, NUMBER, KEYWORD, OPERATOR, ASSIGN, END, SEMICOLON, COMMENT } TokenType;
+typedef enum { 
+    ID, NUMBER, KEYWORD, OPERATOR, ASSIGN, END, SEMICOLON, COMMENT,
+    IF, ELSE, WHILE, LBRACE, RBRACE, LPAREN, RPAREN, FUNC, CALL
+} TokenType;
 
 typedef struct Token {
     TokenType type;
