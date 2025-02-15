@@ -1,0 +1,8 @@
+{
+    "files.associations": {
+        "string.h": "c",
+        "*.gitignore": "c",
+        "tokens.h": "c",
+        "stdio.h": "c"
+    }
+}
