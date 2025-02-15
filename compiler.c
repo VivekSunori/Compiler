@@ -34,7 +34,7 @@ void compileFile(const char* filename) {
 
 void help(){
     printf("cmpx <filename.cx> - Compiles the given file.\n");
-    printf("cmpx -help - Displays this help message.\n");
+    printf("-help - Displays this help message.\n");
 }
 
 int main(int argc, char* argv[]) {
@@ -42,7 +42,7 @@ int main(int argc, char* argv[]) {
         printf("Usage: %s <filename.cx>\n", argv[0]);
         return 1;
     }
-    if(argv[1] == "-help"){
+    if (strcmp(argv[1], "-help") == 0 || strcmp(argv[1], "--help") == 0 || strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--h") == 0 || strcmp(argv[1], "-H") == 0 || strcmp(argv[1], "--H") == 0) {
         help();
         exit(0);
     }

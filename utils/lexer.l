@@ -17,15 +17,15 @@ COMMENT     "#"[^\\n]*
 SEMICOLON   ";"
 LBRACE      "{"
 RBRACE      "}"
-LPAREN      "\\("
-RPAREN      "\\)"
+LPAREN      "\("
+RPAREN      "\)"
 IF          "if"
 ELSE        "else"
 WHILE       "while"
 FUNC        "func"
 CALL        "call"
+COMMA       ","
 WHITESPACE  [ \t\n\r]+
-
 
 %%
 
@@ -47,6 +47,7 @@ WHITESPACE  [ \t\n\r]+
 {ASSIGN}        { addToken(ASSIGN, yytext); printf("TOKEN: ASSIGN, VALUE: %s\n", yytext); }  
 {OPERATOR}      { addToken(OPERATOR, yytext); printf("TOKEN: OPERATOR, VALUE: %s\n", yytext); }  
 {SEMICOLON}     { addToken(SEMICOLON, yytext); printf("TOKEN: SEMICOLON, VALUE: %s\n", yytext); }  
+{COMMA}         { addToken(COMMA, yytext); printf("TOKEN: COMMA, VALUE: %s\n", yytext); }  
 
 {COMMENT}       { printf("Skipping comment: %s\n", yytext); }  
 {WHITESPACE}    { /* Ignore whitespace */ }  
