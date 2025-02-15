@@ -48,7 +48,8 @@ print z;
 
 ## How Our Compiler Works
 
-## Folder Structure
+
+```
 .
 └── CompilerX/
     ├── bin/
@@ -71,6 +72,7 @@ print z;
     ├── parser.c # For analysis will be splitted into modules soon.
     └── semantic.c # For analysis adn AST to Assembly code generation.
 
+```
 ### **Roles of Each Component:**  
 
 #### 1️⃣ **Lexer (Lexical Analyzer)**  
