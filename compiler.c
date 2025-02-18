@@ -49,6 +49,15 @@ int main(int argc, char* argv[]) {
         help();
         exit(0);
     }
+    
+    // Extract the file extension
+    char *filename = argv[1];
+    char *dot = strrchr(filename, '.');  // Find the last occurrence of '.'
+
+    if (dot == NULL || strcmp(dot, ".cx") != 0) {
+        printf("Error: Invalid file extension\n");
+        exit(1);
+    }
 
     compileFile(argv[1]);
 
