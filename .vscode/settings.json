@@ -4,6 +4,8 @@
         "*.gitignore": "c",
         "tokens.h": "c",
         "stdio.h": "c",
-        "ast.h": "c"
+        "ast.h": "c",
+        "parser.h": "c",
+        "symbol_table.h": "c"
     }
 }

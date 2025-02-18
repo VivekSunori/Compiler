@@ -3,7 +3,14 @@
 #include <stdlib.h>
 #include <string.h>
 #include "semantic.c"
+#include "utils/help.c"
 
+/**
+ * @brief Compiles the given file.
+ * 
+ * @param filename The name of the file to compile.
+ * @return void
+ */
 void compileFile(const char* filename) {
     // Open the source file
     FILE *file = fopen(filename, "r");
@@ -32,10 +39,6 @@ void compileFile(const char* filename) {
     printf("\nCompilation completed successfully.\n");
 }
 
-void help(){
-    printf("cmpx <filename.cx> - Compiles the given file.\n");
-    printf("-help - Displays this help message.\n");
-}
 
 int main(int argc, char* argv[]) {
     if (argc != 2) {

@@ -12,15 +12,15 @@ To Edit & Recompile CompilerX, you need to run the following command:
 
 ```
 $ flex <lexerFiles>
-$ gcc compiler.c -o cmx
+$ gcc compiler.c -o cmpx
 ```
-- <lexerFiles> is the lexer files which are in the `COMPILERX/utils` directory
-- `cmx` is the executable file, put it in `bin` directory in the `COMPILERX` directory to use it in the command line using $PATH variable
+- `lexerFiles` is the lexer files which are in the `COMPILERX/utils` directory
+- `cmpx` is the executable file, put it in `bin` directory in the `COMPILERX` directory to use it in the command line using $PATH variable
 
 This will compile the compiler and the lexer and the parser. You can then run the compiler with the following command:
 
 ```
-$ cmx <file.cx>
+$ cmpx <file.cx>
 ```
 
 This will compile the file.cx file into LLVM bytecode and print the LLVM bytecode to the screen.
