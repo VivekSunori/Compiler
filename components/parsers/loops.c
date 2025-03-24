@@ -23,7 +23,7 @@ ASTNode* loop() {
     match(LPAREN);
 
     // Parse the loop condition
-    ASTNode *cond = expression();
+    ASTNode *cond = parseExpression(1);
     if (!cond) {
         printf("Syntax Error: Invalid condition in while loop\n");
         exit(1);
@@ -108,7 +108,7 @@ ASTNode* forLoop() {
     match(SEMICOLON);
 
     // Parse condition
-    ASTNode *condition = expression();  // This should handle the loop condition (e.g., i < 10)
+    ASTNode *condition = parseExpression(1);  // This should handle the loop condition (e.g., i < 10)
     if (!condition) {
         printf("Syntax Error: Invalid condition in for loop\n");
         exit(1);
@@ -122,7 +122,7 @@ ASTNode* forLoop() {
     match(SEMICOLON);
 
     // Parse increment
-    ASTNode *increment = expression();  // This should handle the increment statement (e.g., i++)
+    ASTNode *increment = parseExpression(1);  // This should handle the increment statement (e.g., i++)
     if (!increment) {
         printf("Syntax Error: Invalid increment in for loop\n");
         exit(1);
@@ -223,7 +223,7 @@ ASTNode* doWhileLoop() {
     match(LPAREN);
 
     // Parse the loop condition
-    ASTNode *condition = expression();
+    ASTNode *condition = parseExpression(1);
     if (!condition) {
         printf("Syntax Error: Invalid condition in do-while loop\n");
         exit(1);

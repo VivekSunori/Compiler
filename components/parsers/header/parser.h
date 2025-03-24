@@ -10,7 +10,7 @@ void nextToken();
 void match(TokenType expected);
 ASTNode* factor();
 ASTNode* term();
-ASTNode* expression();
+ASTNode* parseExpression(1);
 ASTNode* statement();
 ASTNode* conditional();
 ASTNode* functionDef();

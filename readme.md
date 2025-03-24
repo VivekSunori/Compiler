@@ -1,6 +1,6 @@
 # CompilerX
 
-CompilerX is a compiler that compiles cx code into LLVM bytecode using flex and bison in C. The purpose of this compiler is to learn how to use flex and bison in C and how to write a compiler for your own language in C. It is also a good example of how to use flex and bison in C to write a compiler.
+CompilerX is a compiler that compiles cx code into Assembly code using flex and bison in C. The purpose of this compiler is to learn how to use flex and bison in C and how to write a compiler for your own language in C. It is also a good example of how to use flex and bison in C to write a compiler.
 
 ## Installation
 
@@ -131,7 +131,34 @@ print z;
   - Generates intermediate/assembly code.  
 - **Output:** Machine-executable code or instructions.
 
+---
+
+### Reference
+- [Parsing expressions by precedence climbing](https://eli.thegreenplace.net/2012/08/02/parsing-expressions-by-precedence-climbing)
+- [CS 340: Lecture 6: Precedence Climbing, Abstract Syntax Trees](https://ycpcs.github.io/cs340-fall2018/lectures/lecture06.html)
+- Recursive Descent Parser in C
+- [Untangling Lifetimes: The Arena Allocator](https://www.rfleury.com/p/untangling-lifetimes-the-arena-allocator)
 --- 
+
+### **Precedence and Arena Usage in Memory Management**  
+
+In our project, **precedence and arena-based memory management** are used to optimize performance, reduce fragmentation, and efficiently allocate and deallocate memory.  
+
+#### **Why Use Precedence?**  
+Precedence is used to determine the priority of memory allocation strategies based on factors such as access speed, alignment, and resource constraints. It ensures that:  
+- **Frequently used memory blocks** are allocated efficiently.  
+- **Memory deallocation follows an ordered approach** to prevent leaks.  
+- **Cache-friendly memory allocation** enhances execution speed.  
+
+#### **Why Use Arena-Based Memory Management?**  
+Arena-based memory management helps in:  
+- **Fast allocation and deallocation** by managing memory in pre-allocated chunks.  
+- **Minimizing fragmentation** since memory is reused efficiently.  
+- **Simplified memory handling**, as all memory is freed at once when the arena is destroyed, reducing overhead.  
+
+This approach is particularly beneficial in scenarios where frequent memory allocation and deallocation occur, such as **real-time applications, compilers, and high-performance computing tasks**.  
+
+---
 
 ## Author
 [Jeevan Joshi](https://github.com/jeevanjoshi4434)
@@ -139,3 +166,8 @@ print z;
 ## License
 
 CompilerX is released under the [MIT License](https://opensource.org/licenses/MIT).
+
+## Future work
+- Convert large If-Else blocks to Switch-Case blocks for better performance.
+- Bytecode Generation (Platform Independency).
+- faster Execution.

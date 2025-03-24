@@ -6,14 +6,16 @@
 
 #define yylex tokenizer
 
+int inVarDeclaration = 0;
+
 %}
 
 DIGIT       [0-9]+
-ID          [a-zA-Z_][a-zA-Z0-9_]*
+ID          [a-zA-Z_][a-zA-Z0-9_]* // Identifiers (variables, function names)
 ASSIGN      "="
 OPERATOR    [+\-*/]
-KEYWORD     "int"|"print"|"fl"|"double"|"char"|"long"
-COMMENT     "#"[^\\n]*
+KEYWORD     "num"|"log"|"str" // Recognized data types
+COMMENT     "#"[^\\n]* // Single-line comment
 SEMICOLON   ";"
 LBRACE      "{"
 RBRACE      "}"
@@ -26,10 +28,37 @@ FUNC        "func"
 CALL        "call"
 COMMA       ","
 WHITESPACE  [ \t\n\r]+
-
+EXP         "<=|>="
 %%
 
-{KEYWORD}       { addToken(KEYWORD, yytext); printf("TOKEN: KEYWORD, VALUE: %s\n", yytext); }  
+{KEYWORD} { 
+    addToken(KEYWORD, yytext);
+    printf("TOKEN: KEYWORD, VALUE: %s\n", yytext);
+    inVarDeclaration = 1;
+}
+
+{ID} { 
+    if (strlen(yytext) > MAX_VAR_LENGTH) {
+        printf("ERROR: Variable name '%s' exceeds 50 characters!\n", yytext);
+        exit(1);  
+    }
+
+    if (inVarDeclaration) {
+        addToken(VAR, yytext);
+        printf("TOKEN: VAR, VALUE: %s\n", yytext);
+        inVarDeclaration = 0;
+    } else {
+        addToken(ID, yytext);
+        printf("TOKEN: ID, VALUE: %s\n", yytext);
+    }
+}
+
+{DIGIT}         { addToken(NUMBER, yytext); printf("TOKEN: NUMBER, VALUE: %s\n", yytext); }  
+{ASSIGN}        { addToken(ASSIGN, yytext); printf("TOKEN: ASSIGN, VALUE: %s\n", yytext); }  
+{OPERATOR}      { addToken(OPERATOR, yytext); printf("TOKEN: OPERATOR, VALUE: %s\n", yytext); }  
+{SEMICOLON}     { addToken(SEMICOLON, yytext); printf("TOKEN: SEMICOLON, VALUE: %s\n", yytext); }  
+{COMMA}         { addToken(COMMA, yytext); printf("TOKEN: COMMA, VALUE: %s\n", yytext); }  
+
 {IF}            { addToken(IF, yytext); printf("TOKEN: IF, VALUE: %s\n", yytext); }
 {ELSE}          { addToken(ELSE, yytext); printf("TOKEN: ELSE, VALUE: %s\n", yytext); }
 {WHILE}         { addToken(WHILE, yytext); printf("TOKEN: WHILE, VALUE: %s\n", yytext); }
@@ -42,17 +71,16 @@ WHITESPACE  [ \t\n\r]+
 {LPAREN}        { addToken(LPAREN, yytext); printf("TOKEN: LPAREN, VALUE: %s\n", yytext); }
 {RPAREN}        { addToken(RPAREN, yytext); printf("TOKEN: RPAREN, VALUE: %s\n", yytext); }
 
-{ID}            { addToken(ID, yytext); printf("TOKEN: ID, VALUE: %s\n", yytext); }  
-{DIGIT}         { addToken(NUMBER, yytext); printf("TOKEN: NUMBER, VALUE: %s\n", yytext); }  
-{ASSIGN}        { addToken(ASSIGN, yytext); printf("TOKEN: ASSIGN, VALUE: %s\n", yytext); }  
-{OPERATOR}      { addToken(OPERATOR, yytext); printf("TOKEN: OPERATOR, VALUE: %s\n", yytext); }  
-{SEMICOLON}     { addToken(SEMICOLON, yytext); printf("TOKEN: SEMICOLON, VALUE: %s\n", yytext); }  
-{COMMA}         { addToken(COMMA, yytext); printf("TOKEN: COMMA, VALUE: %s\n", yytext); }  
+{EXP}           { addToken(EXP, yytext); printf("TOKEN: EXP, VALUE: %s\n", yytext); }  
 
 {COMMENT}       { printf("Skipping comment: %s\n", yytext); }  
-{WHITESPACE}    { /* Ignore whitespace */ }  
 
-.               { printf("ERROR: Unrecognized character '%s'\n", yytext); exit(0); }  
+{WHITESPACE}    { /* Do nothing */ }  
+
+. { 
+    printf("ERROR: Unrecognized character '%s'\n", yytext); 
+    exit(0); 
+}  
 
 %%
 

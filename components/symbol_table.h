@@ -17,7 +17,6 @@ extern int symCount;
 
 // Token pointer
 extern Token *current;
-
 // Functions related to symbol table (Optional)
 void addSymbol(const char *name, int value);
 int lookupSymbol(const char *name);

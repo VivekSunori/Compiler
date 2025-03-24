@@ -1,122 +1,39 @@
 // semantic.c
-#include "parser.c"
+#include "components/generator/codegen.c"
+#include "components/symbol_table.h"
+#include "components/ast.h"
 
-void generateCode(ASTNode *node, FILE *asmFile)
-{
-    if (!node)
-        return;
+void checkSemantic(ASTNode *node) {
+    if (!node) return;
 
-    switch (node->type)
-    {
-    case NODE_IF:
-        generateCode(node->ifNode.condition, asmFile);
-        fprintf(asmFile, "    cmp rax, 0\n");
-        fprintf(asmFile, "    je .else_%p\n", (void *)node);
-        generateCode(node->ifNode.thenStmt, asmFile);
-        fprintf(asmFile, "    jmp .endif_%p\n", (void *)node);
-        fprintf(asmFile, ".else_%p:\n", (void *)node);
-        generateCode(node->ifNode.elseStmt, asmFile);
-        fprintf(asmFile, ".endif_%p:\n", (void *)node);
-        break;
+    switch (node->type) {
+        case NODE_ASSIGN:
+            if (lookupSymbol(node->assign.name) == -1) {  // Variable not found
+                printf("Semantic Error: Variable '%s' not declared before assignment\n", node->assign.name);
+                exit(1);
+            }
+            checkSemantic(node->assign.expr);
+            break;
 
-    case NODE_WHILE:
-        fprintf(asmFile, ".loop_start_%p:\n", (void *)node);
-        generateCode(node->whileNode.condition, asmFile);
-        fprintf(asmFile, "    cmp rax, 0\n");
-        fprintf(asmFile, "    je .loop_end_%p\n", (void *)node);
-        generateCode(node->whileNode.body, asmFile);
-        fprintf(asmFile, "    jmp .loop_start_%p\n", (void *)node);
-        fprintf(asmFile, ".loop_end_%p:\n", (void *)node);
-        break;
+        case NODE_VAR_DECL:
+            if (lookupSymbol(node->varDecl.name) != -1) {  // Variable already declared
+                printf("Semantic Error: Variable '%s' is already declared\n", node->varDecl.name);
+                exit(1);
+            }
+            addSymbol(node->varDecl.name, 0);  // Add variable with default value 0
+            break;
 
-    case NODE_FUNC_DEF:
-        fprintf(asmFile, "%s:\n", node->funcDef.name);
-        fprintf(asmFile, "    push rbp\n    mov rbp, rsp\n");
-        generateCode(node->funcDef.body, asmFile);
-        fprintf(asmFile, "    mov rsp, rbp\n    pop rbp\n    ret\n");
-        break;
+        case NODE_FUNC_CALL:
+            if (lookupSymbol(node->funcCall.name) == -1) {  // Function not found
+                printf("Semantic Error: Function '%s' is not defined\n", node->funcCall.name);
+                exit(1);
+            }
+            checkSemantic(node->funcCall.args);
+            break;
 
-    case NODE_FUNC_CALL:
-        generateCode(node->funcCall.args, asmFile);
-        fprintf(asmFile, "    call %s\n", node->funcCall.name);
-        break;
-
-    case NODE_FOR:
-        // Generate initialization (before loop starts)
-        generateCode(node->forNode.initialization, asmFile);
-
-        // Loop label
-        fprintf(asmFile, ".for_condition_%p:\n", (void *)node);
-
-        // Generate condition check (if the condition is false, jump out of the loop)
-        generateCode(node->forNode.condition, asmFile);
-        fprintf(asmFile, "    cmp rax, 0\n");
-        fprintf(asmFile, "    je .for_end_%p\n", (void *)node); // Jump to end if condition is false
-
-        // Generate loop body
-        generateCode(node->forNode.body, asmFile);
-
-        // Generate increment (after the loop body)
-        generateCode(node->forNode.increment, asmFile);
-
-        // Jump back to the condition check
-        fprintf(asmFile, "    jmp .for_condition_%p\n", (void *)node);
-
-        // Loop exit label
-        fprintf(asmFile, ".for_end_%p:\n", (void *)node);
-        break;
-    case NODE_DO_WHILE:
-        // Loop start label (before loop body)
-        fprintf(asmFile, ".do_start_%p:\n", (void *)node);
-
-        // Generate loop body
-        generateCode(node->doWhileNode.body, asmFile);
-
-        // Generate condition check (if the condition is false, jump out of the loop)
-        generateCode(node->doWhileNode.condition, asmFile);
-        fprintf(asmFile, "    cmp rax, 0\n");
-        fprintf(asmFile, "    je .do_end_%p\n", (void *)node); // Jump to end if condition is false
-
-        // Jump back to the start of the loop
-        fprintf(asmFile, "    jmp .do_start_%p\n", (void *)node);
-
-        // Loop exit label
-        fprintf(asmFile, ".do_end_%p:\n", (void *)node);
-        break;
-
-    default:
-        // Handle other cases as before
-        break;
-    }
-    generateCode(node->next, asmFile);
-}
-
-void generateAssembly(const char *filename)
-{
-    FILE *asmFile = fopen(filename, "w");
-    if (!asmFile)
-    {
-        printf("Error: Cannot open ASM file\n");
-        exit(1);
+        default:
+            break;
     }
 
-    // Data Section
-    fprintf(asmFile, "section .data\n");
-    for (int i = 0; i < symCount; i++)
-    {
-        fprintf(asmFile, "    %s dq 0\n", symTable[i].name);
-    }
-
-    // Text Section
-    fprintf(asmFile, "section .text\n");
-    fprintf(asmFile, "global _start\n");
-    fprintf(asmFile, "_start:\n");
-
-    generateCode(astHead, asmFile);
-
-    fprintf(asmFile, "    mov rax, 60\n");
-    fprintf(asmFile, "    xor rdi, rdi\n");
-    fprintf(asmFile, "    syscall\n");
-
-    fclose(asmFile);
+    checkSemantic(node->next);
 }

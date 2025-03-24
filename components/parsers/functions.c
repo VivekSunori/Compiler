@@ -55,7 +55,7 @@ ASTNode* functionCall() {
         exit(1);
     }
     nextToken();
-    node->funcCall.args = expression();
+    node->funcCall.args = parseExpression(1);
     if (current->type != RPAREN) {
         printf("Error: Missing ')' after CALL arguments\n");
         exit(1);

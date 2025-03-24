@@ -20,7 +20,7 @@ ASTNode* conditional() {
     nextToken();
     
     // Parse the condition expression
-    ASTNode *cond = expression();
+    ASTNode *cond = parseExpression(1);
     if (current->type != RPAREN) {
         printf("Error: Missing ')' after condition\n");
         exit(1);
