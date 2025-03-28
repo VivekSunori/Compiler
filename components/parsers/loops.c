@@ -8,11 +8,6 @@
  * @return The parsed while loop
  */
 ASTNode* loop() {
-    // Check for WHILE keyword
-    if (!current || current->type != WHILE) {
-        printf("Syntax Error: Expected 'while'\n");
-        exit(1);
-    }
     match(WHILE);
 
     // Check for '('
@@ -23,7 +18,7 @@ ASTNode* loop() {
     match(LPAREN);
 
     // Parse the loop condition
-    ASTNode *cond = parseExpression(1);
+    ASTNode *cond = parseCondition(1);
     if (!cond) {
         printf("Syntax Error: Invalid condition in while loop\n");
         exit(1);
@@ -58,13 +53,12 @@ ASTNode* loop() {
     match(RBRACE);
 
     // Construct the loop AST node
-    ASTNode *node = malloc(sizeof(ASTNode));
+    ASTNode *node = allocateNode(NODE_WHILE);
     if (!node) {
         printf("Memory Error: Failed to allocate memory for while loop node\n");
         exit(1);
     }
 
-    node->type = NODE_WHILE;
     node->whileNode.condition = cond;
     node->whileNode.body = body;
 
@@ -79,11 +73,6 @@ ASTNode* loop() {
  * @return The parsed for loop
  */
 ASTNode* forLoop() {
-    // Check for FOR keyword
-    if (!current || current->type != FOR) {
-        printf("Syntax Error: Expected 'for'\n");
-        exit(1);
-    }
     match(FOR);
 
     // Check for '('
@@ -108,7 +97,7 @@ ASTNode* forLoop() {
     match(SEMICOLON);
 
     // Parse condition
-    ASTNode *condition = parseExpression(1);  // This should handle the loop condition (e.g., i < 10)
+    ASTNode *condition = parseCondition(1);  // This should handle the loop condition (e.g., i < 10)
     if (!condition) {
         printf("Syntax Error: Invalid condition in for loop\n");
         exit(1);
@@ -157,13 +146,12 @@ ASTNode* forLoop() {
     match(RBRACE);
 
     // Construct the for loop AST node
-    ASTNode *node = malloc(sizeof(ASTNode));
+    ASTNode *node = allocateNode(NODE_FOR);
     if (!node) {
         printf("Memory Error: Failed to allocate memory for for loop node\n");
         exit(1);
     }
 
-    node->type = NODE_FOR;
     node->forNode.initialization = initialization;
     node->forNode.condition = condition;
     node->forNode.increment = increment;
@@ -180,11 +168,7 @@ ASTNode* forLoop() {
  * @return The parsed do-while loop
  */
 ASTNode* doWhileLoop() {
-    // Check for DO keyword
-    if (!current || current->type != DO) {
-        printf("Syntax Error: Expected 'do'\n");
-        exit(1);
-    }
+    
     match(DO);
 
     // Check for '{'
@@ -223,7 +207,7 @@ ASTNode* doWhileLoop() {
     match(LPAREN);
 
     // Parse the loop condition
-    ASTNode *condition = parseExpression(1);
+    ASTNode *condition = parseCondition(1);
     if (!condition) {
         printf("Syntax Error: Invalid condition in do-while loop\n");
         exit(1);
@@ -237,13 +221,11 @@ ASTNode* doWhileLoop() {
     match(RPAREN);
 
     // Construct the do-while AST node
-    ASTNode *node = malloc(sizeof(ASTNode));
+    ASTNode *node = allocateNode(NODE_DO_WHILE);
     if (!node) {
         printf("Memory Error: Failed to allocate memory for do-while loop node\n");
         exit(1);
     }
-
-    node->type = NODE_DO_WHILE;
     node->doWhileNode.condition = condition;
     node->doWhileNode.body = body;
 

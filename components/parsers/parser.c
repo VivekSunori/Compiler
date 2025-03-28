@@ -8,7 +8,6 @@
 #include "functions.c"
 #include "loops.c"
 
-// Define nextToken and match functions here (or move them to expression.c if necessary)
 void nextToken() {
     if (current) current = current->next;
 }
@@ -25,4 +24,12 @@ void match(TokenType expected) {
     }
 }
 
-// Other parser code here if necessary
+void expect(TokenType expected) {
+    if (current && current->type != expected)
+    {
+        printf("Syntax Error: Expected '%s' but found '%s'\n", tokenTypeToString(expected), tokenTypeToString(current->type));
+        exit(1);
+    }else{
+    nextToken();
+    }
+}

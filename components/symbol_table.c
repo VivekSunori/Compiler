@@ -1,11 +1,11 @@
 // symbol_table.c
 #include "symbol_table.h"
 
-// Initialize the symbol table and counter
+ 
 Symbol symTable[MAX_SYMBOLS];
 int symCount = 0;
 
-// Token pointer
+ 
 Token *current = NULL;
 
 

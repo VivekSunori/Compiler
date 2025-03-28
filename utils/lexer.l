@@ -28,7 +28,12 @@ FUNC        "func"
 CALL        "call"
 COMMA       ","
 WHITESPACE  [ \t\n\r]+
-EXP         "<=|>="
+FOR         "for"
+DO          "do"
+AND         "&&"
+OR          "||"
+RELOP       "=="|"!="|"<"|">"|"<="|">="
+
 %%
 
 {KEYWORD} { 
@@ -71,7 +76,11 @@ EXP         "<=|>="
 {LPAREN}        { addToken(LPAREN, yytext); printf("TOKEN: LPAREN, VALUE: %s\n", yytext); }
 {RPAREN}        { addToken(RPAREN, yytext); printf("TOKEN: RPAREN, VALUE: %s\n", yytext); }
 
-{EXP}           { addToken(EXP, yytext); printf("TOKEN: EXP, VALUE: %s\n", yytext); }  
+{RELOP}           { addToken(RELOP, yytext); printf("TOKEN: RELOP, VALUE: %s\n", yytext); }  
+{DO}           { addToken(DO, yytext); printf("TOKEN: DO, VALUE: %s\n", yytext); }  
+{FOR}           { addToken(FOR, yytext); printf("TOKEN: FOR, VALUE: %s\n", yytext); }  
+{AND}           { addToken(AND, yytext); printf("TOKEN: AND, VALUE: %s\n", yytext); }  
+{OR}           { addToken(OR, yytext); printf("TOKEN: OR, VALUE: %s\n", yytext); }  
 
 {COMMENT}       { printf("Skipping comment: %s\n", yytext); }  
 

@@ -12,31 +12,28 @@
  * @return void
  */
 void compileFile(const char* filename) {
-    // Open the source file
     FILE *file = fopen(filename, "r");
     if (!file) {
         printf("Error: Could not open file '%s'\n", filename);
         exit(1);
     }
 
-    // Read the file content
     char source[1000] = {0};
     char line[100];
     while (fgets(line, sizeof(line), file)) {
         strcat(source, line);
     }
 
-    // Lexical Analysis
     tokenize(file);
     fclose(file);
 
-    // Parsing
     current = head;
     while (current && current->type != END) {
         statement();
     }
 
     printf("\nCompilation completed successfully.\n");
+    freeArena(); // Free memory allocated by the arena allocator (Testing purposes only, use after compilation is complete and assembly is generated) 
 }
 
 
@@ -52,7 +49,7 @@ int main(int argc, char* argv[]) {
     
     // Extract the file extension
     char *filename = argv[1];
-    char *dot = strrchr(filename, '.');  // Find the last occurrence of '.'
+    char *dot = strrchr(filename, '.'); 
 
     if (dot == NULL || strcmp(dot, ".cx") != 0) {
         printf("Error: Invalid file extension\n");

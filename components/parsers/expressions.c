@@ -10,8 +10,7 @@
 ASTNode* factor() {
     printf("%s",current->next->value);
     if (current && current->type == NUMBER) {
-        ASTNode *node = malloc(sizeof(ASTNode));
-        node->type = NODE_NUMBER;
+        ASTNode *node = allocateNode(NODE_NUMBER);
         node->number = atoi(current->value);
         nextToken();
         return node;
@@ -21,8 +20,7 @@ ASTNode* factor() {
             printf("Semantic Error: Undefined variable '%s'\n", current->value);
             exit(1);
         }
-        ASTNode *node = malloc(sizeof(ASTNode));
-        node->type = NODE_NUMBER;
+        ASTNode *node = allocateNode(NODE_NUMBER);
         node->number = symTable[index].value;
         nextToken();
         return node;
@@ -45,8 +43,7 @@ ASTNode* term() {
         char op = current->value[0];
         nextToken();
         ASTNode *right = factor();
-        ASTNode *node = malloc(sizeof(ASTNode));
-        node->type = NODE_BINARY_OP;
+        ASTNode *node = allocateNode(NODE_BINARY_OP);
         node->binaryOp.op = op;
         node->binaryOp.left = left;
         node->binaryOp.right = right;
@@ -70,8 +67,7 @@ ASTNode* expression() {
         char op = current->value[0];
         nextToken();
         ASTNode *right = term();
-        ASTNode *node = malloc(sizeof(ASTNode));
-        node->type = NODE_BINARY_OP;
+        ASTNode *node = allocateNode(NODE_BINARY_OP);
         node->binaryOp.op = op;
         node->binaryOp.left = left;
         node->binaryOp.right = right;
@@ -80,41 +76,78 @@ ASTNode* expression() {
     return left;
 }
 
+/**
+ * @brief  Parses an expression.
+ * 
+ * This function helps with parsing by parsing an expression. (+, -, *, /, ^)
+ * The precedence of each operator is determined by the getPrecedence function which helps with parsing to determine the order of operations.
+ * 
+ * @return The parsed expression ASTNode pointer*
+ */
 ASTNode* parseExpression(int minPrecedence) {
-    ASTNode *left = factor();  // Get the first operand (number, variable, function call)
+    ASTNode *left = factor();
+
 
     while (current && current->type == OPERATOR && getPrecedence(current->value[0]) >= minPrecedence) {
-        char op = current->value[0];  // Store the operator
+        char op = current->value[0];
         int precedence = getPrecedence(op);
         nextToken();
 
-        // Right-associative operators (e.g., power ^) need +1 precedence
         if (isRightAssociative(op)) {
             precedence++;
         }
 
-        ASTNode *right = parseExpression(precedence);  // Recursively parse right operand
+        ASTNode *right = parseExpression(precedence);
 
-        // Create a new binary operation node
-        ASTNode *node = malloc(sizeof(ASTNode));
-        node->type = NODE_BINARY_OP;
+        ASTNode *node = allocateNode(NODE_BINARY_OP);
         node->binaryOp.op = op;
         node->binaryOp.left = left;
         node->binaryOp.right = right;
-        left = node;  // Update left operand for next iteration
+        left = node; 
+    }
+
+    return left;
+}
+
+ASTNode* parseCondition(int minPrecedence) {
+    ASTNode *left = parseExpression(0); 
+
+    while (current && (isLogicalOp(current->value) || isRelationalOp(current->value)) && getPrecedence(current->value) >= minPrecedence) {
+        char op[3];
+        strcpy(op, current->value);
+        int precedence = getPrecedence(op);
+        nextToken();
+
+        ASTNode *right = parseCondition(precedence);
+
+        ASTNode *node = NULL;
+
+        if (isLogicalOp(op)) {
+            node = allocateNode(NODE_LOGICAL_OP);
+            strcpy(node->logicalOp.op, op);
+        } else if (isRelationalOp(op)) {
+            node = allocateNode(NODE_RELATIONAL_OP);
+            strcpy(node->relOp.op, op);
+        }
+        node->logicalOp.left = left;
+        node->logicalOp.right = right;
+        left = node;
     }
 
     return left;
 }
 
 
-int getPrecedence(char op) {
-    switch (op) {
-        case '+': case '-': return 1;
-        case '*': case '/': return 2;
-        case '^': return 3;  // Highest precedence (right-associative)
-        default: return 0;
-    }
+
+int getPrecedence(char *op) {
+    if (strcmp(op, "||") == 0) return 1;
+    if (strcmp(op, "&&") == 0) return 2;
+    if (strcmp(op, "==") == 0 || strcmp(op, "!=") == 0) return 3;
+    if (strcmp(op, ">") == 0 || strcmp(op, "<") == 0 || strcmp(op, ">=") == 0 || strcmp(op, "<=") == 0) return 4;
+    if (strcmp(op, "+") == 0 || strcmp(op, "-") == 0) return 5;
+    if (strcmp(op, "*") == 0 || strcmp(op, "/") == 0) return 6;
+    if (strcmp(op, "^") == 0) return 7;
+    return 0;
 }
 
 // Determines if an operator is right-associative (like exponentiation)
@@ -123,3 +156,44 @@ int isRightAssociative(char op) {
     return (op == '^');  // Exponentiation is right-associative
 }
 
+
+ASTNode* logical() {
+    ASTNode* left = comparison();
+    while (current && current->type == OPERATOR && (strcmp(current->value, "&&") == 0 || strcmp(current->value, "||") == 0)) {
+        char* op = current->value;
+        nextToken();
+        ASTNode* right = comparison();
+        ASTNode* node = allocateNode(NODE_LOGICAL_OP);
+        node->binaryOp.op = strdup(op);
+        node->binaryOp.left = left;
+        node->binaryOp.right = right;
+        left = node;
+    }
+    return left;
+}
+
+ASTNode* comparison() {
+    ASTNode* left = parseExpression(1); 
+    if (current && current->type == OPERATOR && isComparisonOperator(current->value)) {
+        char* op = current->value;
+        nextToken();
+        ASTNode* right = parseExpression(1);
+        ASTNode* node = allocateNode(NODE_COMPARISON_OP);
+        node->binaryOp.op = strdup(op);
+        node->binaryOp.left = left;
+        node->binaryOp.right = right;
+        return node;
+    }
+    return left;
+}
+
+
+int isLogicalOp(const char *op) {
+    return strcmp(op, "&&") == 0 || strcmp(op, "||") == 0;
+}
+
+int isRelationalOp(const char *op) {
+    return strcmp(op, "<") == 0 || strcmp(op, ">") == 0 ||
+           strcmp(op, "<=") == 0 || strcmp(op, ">=") == 0 ||
+           strcmp(op, "==") == 0 || strcmp(op, "!=") == 0;
+}

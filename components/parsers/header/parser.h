@@ -10,7 +10,7 @@ void nextToken();
 void match(TokenType expected);
 ASTNode* factor();
 ASTNode* term();
-ASTNode* parseExpression(1);
+ASTNode* parseExpression(int minPrecedence);
 ASTNode* statement();
 ASTNode* conditional();
 ASTNode* functionDef();

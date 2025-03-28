@@ -20,7 +20,7 @@ ASTNode* conditional() {
     nextToken();
     
     // Parse the condition expression
-    ASTNode *cond = parseExpression(1);
+    ASTNode *cond = parseCondition(1);
     if (current->type != RPAREN) {
         printf("Error: Missing ')' after condition\n");
         exit(1);
@@ -49,12 +49,11 @@ ASTNode* conditional() {
         // Check for 'if' after 'else' (this handles the 'else if' case)
         if (current->type == IF) {
             ASTNode *elseIfStmt = conditional();  // Recursively handle the else-if case
-            ASTNode *node = malloc(sizeof(ASTNode));
+            ASTNode *node = allocateNode(NODE_IF);
             if (!node) {
                 printf("Memory Error: Failed to allocate memory for else-if node\n");
                 exit(1);
             }
-            node->type = NODE_IF;
             node->ifNode.condition = cond;
             node->ifNode.thenStmt = thenStmt;
             node->ifNode.elseStmt = elseIfStmt;  // Assign the else-if statement as the else
@@ -70,12 +69,11 @@ ASTNode* conditional() {
             }
             nextToken();
             
-            ASTNode *node = malloc(sizeof(ASTNode));
+            ASTNode *node = allocateNode(NODE_IF);
             if (!node) {
                 printf("Memory Error: Failed to allocate memory for else node\n");
                 exit(1);
             }
-            node->type = NODE_IF;
             node->ifNode.condition = cond;
             node->ifNode.thenStmt = thenStmt;
             node->ifNode.elseStmt = elseStmt;  // Assign the 'else' statement
@@ -84,12 +82,11 @@ ASTNode* conditional() {
     }
 
     // No else, return the current node
-    ASTNode *node = malloc(sizeof(ASTNode));
+    ASTNode *node = allocateNode(NODE_IF);
     if (!node) {
         printf("Memory Error: Failed to allocate memory for if node\n");
         exit(1);
     }
-    node->type = NODE_IF;
     node->ifNode.condition = cond;
     node->ifNode.thenStmt = thenStmt;
     node->ifNode.elseStmt = NULL;  // No 'else' or 'else if'
