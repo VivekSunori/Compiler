@@ -1,4 +1,33 @@
+#include "../memory.h"
 #include "header/parser.h"
+#include "header/expressions.h"
+
+// Keep the definition here
+int evaluateExpression(ASTNode *expr) {
+    if (!expr) return 0;
+    
+    switch (expr->type) {
+        case NODE_NUMBER:
+            return expr->number;
+        case NODE_BINARY_OP:
+            switch (expr->binaryOp.op) {
+                case '+': return evaluateExpression(expr->binaryOp.left) + evaluateExpression(expr->binaryOp.right);
+                case '-': return evaluateExpression(expr->binaryOp.left) - evaluateExpression(expr->binaryOp.right);
+                case '*': return evaluateExpression(expr->binaryOp.left) * evaluateExpression(expr->binaryOp.right);
+                case '/': {
+                    int divisor = evaluateExpression(expr->binaryOp.right);
+                    if (divisor == 0) {
+                        printf("Error: Division by zero\n");
+                        exit(1);
+                    }
+                    return evaluateExpression(expr->binaryOp.left) / divisor;
+                }
+                default: return 0;
+            }
+        default: return 0;
+    }
+}
+ 
 
 /**
  * @brief  Parses a factor expression.
@@ -87,7 +116,6 @@ ASTNode* expression() {
 ASTNode* parseExpression(int minPrecedence) {
     ASTNode *left = factor();
 
-
     while (current && current->type == OPERATOR && getPrecedence(current->value[0]) >= minPrecedence) {
         char op = current->value[0];
         int precedence = getPrecedence(op);
@@ -112,10 +140,11 @@ ASTNode* parseExpression(int minPrecedence) {
 ASTNode* parseCondition(int minPrecedence) {
     ASTNode *left = parseExpression(0); 
 
-    while (current && (isLogicalOp(current->value) || isRelationalOp(current->value)) && getPrecedence(current->value) >= minPrecedence) {
+    while (current && (isLogicalOp(current->value) || isRelationalOp(current->value)) && 
+           getPrecedence(current->value[0]) >= minPrecedence) {
         char op[3];
         strcpy(op, current->value);
-        int precedence = getPrecedence(op);
+        int precedence = getPrecedence(op[0]);
         nextToken();
 
         ASTNode *right = parseCondition(precedence);
@@ -139,14 +168,10 @@ ASTNode* parseCondition(int minPrecedence) {
 
 
 
-int getPrecedence(char *op) {
-    if (strcmp(op, "||") == 0) return 1;
-    if (strcmp(op, "&&") == 0) return 2;
-    if (strcmp(op, "==") == 0 || strcmp(op, "!=") == 0) return 3;
-    if (strcmp(op, ">") == 0 || strcmp(op, "<") == 0 || strcmp(op, ">=") == 0 || strcmp(op, "<=") == 0) return 4;
-    if (strcmp(op, "+") == 0 || strcmp(op, "-") == 0) return 5;
-    if (strcmp(op, "*") == 0 || strcmp(op, "/") == 0) return 6;
-    if (strcmp(op, "^") == 0) return 7;
+int getPrecedence(char op) {
+    if (op == '+' || op == '-') return 5;
+    if (op == '*' || op == '/') return 6;
+    if (op == '^') return 7;
     return 0;
 }
 
@@ -160,13 +185,14 @@ int isRightAssociative(char op) {
 ASTNode* logical() {
     ASTNode* left = comparison();
     while (current && current->type == OPERATOR && (strcmp(current->value, "&&") == 0 || strcmp(current->value, "||") == 0)) {
-        char* op = current->value;
+        char op[3];
+        strcpy(op, current->value);
         nextToken();
         ASTNode* right = comparison();
         ASTNode* node = allocateNode(NODE_LOGICAL_OP);
-        node->binaryOp.op = strdup(op);
-        node->binaryOp.left = left;
-        node->binaryOp.right = right;
+        strcpy(node->logicalOp.op, op);  // Use strcpy instead of strdup
+        node->logicalOp.left = left;
+        node->logicalOp.right = right;
         left = node;
     }
     return left;
@@ -175,13 +201,18 @@ ASTNode* logical() {
 ASTNode* comparison() {
     ASTNode* left = parseExpression(1); 
     if (current && current->type == OPERATOR && isComparisonOperator(current->value)) {
-        char* op = current->value;
+        char op[3];
+        strcpy(op, current->value);
         nextToken();
         ASTNode* right = parseExpression(1);
-        ASTNode* node = allocateNode(NODE_COMPARISON_OP);
-        node->binaryOp.op = strdup(op);
-        node->binaryOp.left = left;
-        node->binaryOp.right = right;
+        
+        // Use NODE_RELATIONAL_OP instead of NODE_COMPARISON_OP
+        ASTNode* node = allocateNode(NODE_RELATIONAL_OP);
+        
+        // Use relOp field instead of comparisonOp
+        strcpy(node->relOp.op, op);  // Copy the operator string
+        node->relOp.left = left;
+        node->relOp.right = right;
         return node;
     }
     return left;
@@ -196,4 +227,13 @@ int isRelationalOp(const char *op) {
     return strcmp(op, "<") == 0 || strcmp(op, ">") == 0 ||
            strcmp(op, "<=") == 0 || strcmp(op, ">=") == 0 ||
            strcmp(op, "==") == 0 || strcmp(op, "!=") == 0;
+}
+
+int isComparisonOperator(const char *value) {
+    return strcmp(value, "==") == 0 || 
+           strcmp(value, "!=") == 0 || 
+           strcmp(value, "<") == 0 || 
+           strcmp(value, ">") == 0 || 
+           strcmp(value, "<=") == 0 || 
+           strcmp(value, ">=") == 0;
 }

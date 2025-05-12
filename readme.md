@@ -6,25 +6,116 @@ CompilerX is a compiler that compiles cx code into Assembly code using flex and 
 
 To install CompilerX, you need to have flex and bison installed on your computer. You can download flex and bison from [here](https://www.gnu.org/software/flex/bison.html).
 
-## Usage
+## Building CompilerX
 
-To Edit & Recompile CompilerX, you need to run the following command:
+### Using the Build Script
 
-```
-$ flex <lexerFiles>
-$ gcc compiler.c -o cmpx
-```
-- `lexerFiles` is the lexer files which are in the `COMPILERX/utils` directory
-- `cmpx` is the executable file, put it in `bin` directory in the `COMPILERX` directory to use it in the command line using $PATH variable
-
-This will compile the compiler and the lexer and the parser. You can then run the compiler with the following command:
+The easiest way to build CompilerX is to use the provided build script:
 
 ```
-$ cmpx <file.cx>
+# On Windows
+$ build.bat
+
+# On Linux/macOS
+$ make
 ```
 
-This will compile the file.cx file into LLVM bytecode and print the LLVM bytecode to the screen.
-- Note that this is a work in progress and it is under development.
+### Manual Build Process
+
+If you prefer to build manually, follow these steps:
+
+1. Generate the lexer C file:
+```
+$ cd utils
+$ flex lexer.l
+$ cd ..
+```
+
+2. Compile all source files:
+```
+$ gcc -c compiler.c -o obj/compiler.o
+$ gcc -c components/memory.c -o obj/components/memory.o
+$ gcc -c components/symbol_table.c -o obj/components/symbol_table.o
+$ gcc -c components/tokens.c -o obj/components/tokens.o
+$ gcc -c components/ast_visualizer.c -o obj/components/ast_visualizer.o
+$ gcc -c components/ast_json_exporter.c -o obj/components/ast_json_exporter.o
+$ gcc -c components/parsers/parser.c -o obj/components/parsers/parser.o
+$ gcc -c components/parsers/expressions.c -o obj/components/parsers/expressions.o
+$ gcc -c components/parsers/statements.c -o obj/components/parsers/statements.o
+$ gcc -c components/parsers/conditionals.c -o obj/components/parsers/conditionals.o
+$ gcc -c components/parsers/functions.c -o obj/components/parsers/functions.o
+$ gcc -c components/parsers/loops.c -o obj/components/parsers/loops.o
+$ gcc -c semantic.c -o obj/semantic.o
+$ gcc -c utils/lex.yy.c -o obj/utils/lex.yy.o
+```
+
+3. Link all object files:
+```
+$ gcc obj/compiler.o obj/components/memory.o obj/components/symbol_table.o obj/components/tokens.o obj/components/ast_visualizer.o obj/components/ast_json_exporter.o obj/components/parsers/parser.o obj/components/parsers/expressions.o obj/components/parsers/statements.o obj/components/parsers/conditionals.o obj/components/parsers/functions.o obj/components/parsers/loops.o obj/semantic.o obj/utils/lex.yy.o -o cmpx.exe
+```
+
+4. Copy the executable to the bin directory (optional):
+```
+$ mkdir -p bin
+$ cp cmpx.exe bin/
+```
+
+## Using CompilerX
+
+### Compiling a CX Program
+
+To compile a CX program, use the following command:
+
+```
+$ cmpx example.cx
+```
+
+This will:
+1. Tokenize the source code
+2. Parse the tokens into an Abstract Syntax Tree (AST)
+3. Perform semantic analysis
+4. Generate assembly code
+5. Output visualization of the AST structure
+6. Export the AST to JSON for further analysis
+
+### Compiler Output
+
+CompilerX generates several outputs:
+
+1. **Console Output**: Shows the tokenization process, AST visualization, and compilation status
+2. **AST JSON File**: `ast_all_statements.json` contains the complete AST in JSON format
+3. **Assembly Code**: Generated assembly code ready for execution
+
+### Visualizing the AST
+
+The AST is visualized in two ways:
+1. Text representation in the console
+2. JSON file that can be visualized using external tools
+
+### Example Execution Flow
+
+When you run `cmpx example.cx`, the following happens:
+
+1. The lexer breaks down the source code into tokens
+2. The parser constructs an AST from these tokens
+3. The semantic analyzer checks for errors
+4. The code generator produces assembly code
+5. The AST is visualized and exported to JSON
+
+For example, with this input:
+```
+num x = 10;
+num y = 5;
+print x + y;
+```
+
+The compiler will:
+- Identify tokens: `num`, `x`, `=`, `10`, `;`, etc.
+- Build an AST with variable declarations and a print statement
+- Check that variables are declared before use
+- Generate assembly code to allocate memory, perform addition, and print
+- Visualize the AST structure in the console
+- Export the AST to a JSON file
 
 ## Examples
 

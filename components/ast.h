@@ -22,6 +22,7 @@ typedef enum
     NODE_LOGICAL_OP,
     NODE_RELATIONAL_OP,
     NODE_COMPARISON_OP,
+    NODE_PRINT
 } NodeType;
 
 // Arena allocator structure
@@ -33,7 +34,8 @@ typedef struct Arena
     struct Arena *next;
 } Arena;
 
-typedef struct ASTNode
+typedef struct ASTNode ASTNode;
+struct ASTNode
 {
     NodeType type;
     union 
@@ -101,58 +103,27 @@ typedef struct ASTNode
         } logicalOp;
 
         int boolean;
+        struct {
+            struct ASTNode *expr;
+        } print;
     };
     struct ASTNode *next;
-} ASTNode;
+};
 
 // Global AST head and tail
-ASTNode *astHead = NULL;
-ASTNode *astTail = NULL;
+extern ASTNode *astHead;
+extern ASTNode *astTail;
 
 // Arena global instance
-Arena *arenaHead = NULL;
+extern Arena *arenaHead;
 
 // Function to allocate a new memory block in the arena
-void *arenaAlloc(size_t size)
-{
-    if (!arenaHead || arenaHead->offset + size > arenaHead->size)
-    {
-        size_t blockSize = (size > ARENA_BLOCK_SIZE) ? size : ARENA_BLOCK_SIZE;
-        Arena *newBlock = (Arena *)malloc(sizeof(Arena) + blockSize);
-        if (!newBlock)
-        {
-            fprintf(stderr, "Memory allocation failed\n");
-            exit(1);
-        }
-        newBlock->block = (char *)(newBlock + 1);
-        newBlock->offset = 0;
-        newBlock->size = blockSize;
-        newBlock->next = arenaHead;
-        arenaHead = newBlock;
-    }
-    void *ptr = arenaHead->block + arenaHead->offset;
-    arenaHead->offset += size;
-    return ptr;
-}
+void *arenaAlloc(size_t size);
 
 // Function to allocate an ASTNode using the arena
-ASTNode *allocateNode(NodeType type)
-{
-    ASTNode *node = (ASTNode *)arenaAlloc(sizeof(ASTNode));
-    memset(node, 0, sizeof(ASTNode));
-    node->type = type;
-    return node;
-}
+ASTNode *allocateNode(NodeType type);
 
-void freeArena()
-{
-    while (arenaHead)
-    {
-        Arena *temp = arenaHead;
-        arenaHead = arenaHead->next;
-        free(temp);
-    }
-}
+void freeArena();
 
 #endif
 

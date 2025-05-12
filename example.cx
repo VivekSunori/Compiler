@@ -1,13 +1,13 @@
-int x = 10;
-int y = 5;
+num x = 10 ;
+num y = 5 ;
 
-print x;
-print y;
+print x ;
+print y ;
 
-x = x + y;
+x = x + y ;
 
-print x;
+print x ;
 
-int z = x * 2;
+num z = x * 2 ;
 
-print z;
+print z ;

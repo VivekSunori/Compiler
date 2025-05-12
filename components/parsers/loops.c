@@ -1,4 +1,6 @@
+#include "../memory.h"
 #include "header/parser.h"
+#include "header/parser_functions.h"
 
 /**
  * @brief  Parses a while loop.

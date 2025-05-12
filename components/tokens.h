@@ -2,22 +2,48 @@
 #define TOKENS_H
 
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 
-typedef enum { 
-    ID, NUMBER, KEYWORD, OPERATOR, ASSIGN, END, SEMICOLON, COMMENT,
-    IF, ELSE, WHILE, LBRACE, RBRACE, LPAREN, RPAREN, FUNC, CALL, COMMA, GT, LT, EQ, FOR, DO, VAR, AND, OR, RELOP
+// Token types
+typedef enum {
+    NUMBER,
+    ID,
+    OPERATOR,
+    ASSIGN,
+    SEMICOLON,
+    LBRACE,
+    RBRACE,
+    LPAREN,
+    RPAREN,
+    IF,
+    ELSE,
+    WHILE,
+    FOR,
+    DO,
+    FUNC,
+    CALL,
+    COMMA,
+    AND,
+    OR,
+    RELOP,
+    VAR,
+    PRINT,
+    END
 } TokenType;
 
+// Token structure
 typedef struct Token {
     TokenType type;
     char value[100];
     struct Token* next;
 } Token;
 
-extern Token *head, *tail;
+// Function declarations
+void addToken(TokenType type, const char* value);
+const char* tokenTypeToString(TokenType type);
+void tokenize(FILE *file);
 
-void addToken(TokenType type, const char *value);
+// Global token variables
+extern Token* head;
+extern Token* current;
 
-#endif
+#endif // TOKENS_H

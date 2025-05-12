@@ -1,5 +1,5 @@
 // codegen.c
-#include "parser.c"
+#include "../parsers/header/parser.h"
 
 void generateCode(ASTNode *node, FILE *asmFile)
 {
@@ -84,8 +84,13 @@ void generateCode(ASTNode *node, FILE *asmFile)
         fprintf(asmFile, ".do_end_%p:\n", (void *)node);
         break;
 
+    case NODE_PRINT:
+        generateCode(node->print.expr, asmFile);
+        fprintf(asmFile, "    mov rdi, rax\n");
+        fprintf(asmFile, "    call print_int\n");
+        break;
+
     default:
-        // Handle other cases as before
         break;
     }
     generateCode(node->next, asmFile);

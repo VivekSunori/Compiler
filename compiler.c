@@ -1,9 +1,23 @@
-// compiler.c
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "semantic.c"
 #include "utils/help.c"
+#include "components/symbol_table.h"
+#include "parser.h"
+#include "components/parsers/header/parser.h"
+#include "components/ast_visualizer.h"
+#include "components/ast_json_exporter.h"
+
+struct Stack;
+
+extern Token* current;
+extern Token* head;
+extern void tokenize(FILE *file);
+extern ASTNode* statement();
+extern void freeArena();
+extern struct Stack bracesStack;
+extern struct Stack parenStack;
+extern int isEmpty(struct Stack *stack);
 
 /**
  * @brief Compiles the given file.
@@ -28,12 +42,38 @@ void compileFile(const char* filename) {
     fclose(file);
 
     current = head;
-    while (current && current->type != END) {
-        statement();
+    int statementCount = 0;
+    
+    #define MAX_STATEMENTS 100
+    ASTNode* statements[MAX_STATEMENTS];
+    
+    while (current && current->type != END && statementCount < MAX_STATEMENTS) {
+        ASTNode* node = statement();
+        
+        printf("\n--- AST for statement ---\n");
+        visualizeASTRoot(node);
+        printf("-------------------------\n\n");
+    
+        statements[statementCount++] = node;
+        
+        // nextToken();
     }
 
+    // Check if all braces and parentheses are properly closed
+    if (!isEmpty(&bracesStack)) {
+        printf("Syntax Error: Unclosed braces '{' detected\n");
+        exit(1);
+    }
+    if (!isEmpty(&parenStack)) {
+        printf("Syntax Error: Unclosed parentheses '(' detected\n");
+        exit(1);
+    }
+    
+    // Export all ASTs to a single JSON file
+    exportASTsToSingleJSON(statements, statementCount, "ast_all_statements.json");
+
     printf("\nCompilation completed successfully.\n");
-    freeArena(); // Free memory allocated by the arena allocator (Testing purposes only, use after compilation is complete and assembly is generated) 
+    freeArena(); 
 }
 
 
@@ -42,12 +82,13 @@ int main(int argc, char* argv[]) {
         printf("Usage: %s <filename.cx>\n", argv[0]);
         return 1;
     }
-    if (strcmp(argv[1], "-help") == 0 || strcmp(argv[1], "--help") == 0 || strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--h") == 0 || strcmp(argv[1], "-H") == 0 || strcmp(argv[1], "--H") == 0) {
+    if (strcmp(argv[1], "-help") == 0 || strcmp(argv[1], "--help") == 0 || 
+        strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--h") == 0 || 
+        strcmp(argv[1], "-H") == 0 || strcmp(argv[1], "--H") == 0) {
         help();
         exit(0);
     }
     
-    // Extract the file extension
     char *filename = argv[1];
     char *dot = strrchr(filename, '.'); 
 

@@ -2,14 +2,68 @@
 #include <stdlib.h>
 #include <string.h>
 #include "header/parser.h"
-#include "expressions.c"
-#include "statements.c"
-#include "conditionals.c"
-#include "functions.c"
-#include "loops.c"
+#include "../memory.h"
+#include "../symbol_table.h"
+
+// Define stack size
+#define MAX_STACK_SIZE 100
+
+// Initialize stacks
+struct Stack bracesStack = { .top = -1 };
+struct Stack parenStack = { .top = -1 };
+
+// Stack operations
+void push(struct Stack *stack, char item) {
+    if (stack->top >= MAX_STACK_SIZE - 1) {
+        printf("Error: Stack overflow\n");
+        exit(1);
+    }
+    stack->items[++(stack->top)] = item;
+}
+
+char pop(struct Stack *stack) {
+    if (stack->top < 0) {
+        return '\0'; // Empty stack
+    }
+    return stack->items[(stack->top)--];
+}
+
+int isEmpty(struct Stack *stack) {
+    return stack->top < 0;
+}
 
 void nextToken() {
-    if (current) current = current->next;
+    if (current) {
+        current = current->next;
+        
+        // Track braces and parentheses
+        if (current) {
+            if (current->type == LBRACE) {
+                push(&bracesStack, '{');
+            } 
+            else if (current->type == RBRACE) {
+                char opener = pop(&bracesStack);
+                if (opener != '{') {
+                    printf("Syntax Error: Unmatched closing brace '}'\n");
+                    exit(1);
+                }
+            }
+            else if (current->type == LPAREN) {
+                push(&parenStack, '(');
+            }
+            else if (current->type == RPAREN) {
+                char opener = pop(&parenStack);
+                if (opener != '(') {
+                    printf("Syntax Error: Unmatched closing parenthesis ')'\n");
+                    exit(1);
+                }
+            }
+        }
+        
+        printf("Next token is type: %s , value: %s\n", 
+               current ? tokenTypeToString(current->type) : "NULL", 
+               current ? current->value : "NULL");
+    }
 }
 
 void match(TokenType expected) {

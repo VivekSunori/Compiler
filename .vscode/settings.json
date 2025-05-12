@@ -6,6 +6,10 @@
         "stdio.h": "c",
         "ast.h": "c",
         "parser.h": "c",
-        "symbol_table.h": "c"
+        "symbol_table.h": "c",
+        "semantic.h": "c",
+        "stdlib.h": "c",
+        "codegen.h": "c",
+        "loops.h": "c"
     }
 }
