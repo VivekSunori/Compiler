@@ -7,12 +7,15 @@
 
 extern int evaluateExpression(ASTNode *expr);
 
-void insertSymbol(const char *name, int value) {
+void updateOrInsertSymbol(const char *name, int value, VariableType type) {
     int index = lookupSymbol(name);
     if (index != -1) {
         symTable[index].value = value;
+        symTable[index].type = type;
     } else {
-        addSymbol(name, value);
+        // Call the function from symbol_table.c
+        extern void insertSymbol(const char *name, int value, VariableType type);
+        insertSymbol(name, value, type);
     }
 }
 
@@ -24,11 +27,17 @@ void insertSymbol(const char *name, int value) {
  * @return The parsed statement AST node.
  */
 ASTNode* statement() {
+    printf("Parsing statement, current token: %s\n", current->value);
+    
+    ASTNode* node = NULL;
+    
     switch (current->type) {
         case ID: {
             // In case of ID I'll check in symbol pool if already defined otherwise the VAR case will handle it or I'll throw an error
             int index = lookupSymbol(current->value);
             if (index != -1) {
+                char varName[MAX_VAR_NAME_LENGTH];
+                strcpy(varName, current->value);
                 nextToken();
                 if (current->type == ASSIGN) {
                     nextToken();
@@ -38,11 +47,11 @@ ASTNode* statement() {
                         exit(1);
                     }
                     nextToken();
-                    ASTNode *node = allocateNode(NODE_ASSIGN);
-                    strcpy(node->assign.name, current->value);
+                    node = allocateNode(NODE_ASSIGN);
+                    strcpy(node->assign.name, varName);
                     node->assign.expr = expr;
-                    insertSymbol(current->value, evaluateExpression(expr));
-                    return node;
+                    // Don't insert symbol again, it's already in the table
+                    printf("Assignment statement parsed successfully\n");
                 } else {
                     printf("Error: Unexpected token after variable name\n");
                     exit(1);
@@ -51,22 +60,25 @@ ASTNode* statement() {
                 printf("Error: Variable '%s' not declared type: %s\n", current->value, tokenTypeToString(current->type));
                 exit(1);
             }
+            break;
         }
 
         case VAR: {
+            VariableType varType = TYPE_NUMBER;
+            
+            // Determine variable type based on keyword
+            if (strcmp(current->value, "str") == 0) {
+                varType = TYPE_STRING;
+            } else if (strcmp(current->value, "log") == 0) {
+                varType = TYPE_BOOLEAN;
+            }
+            
             nextToken();
             if (current->type != ID) {
-                printf("Error: Expected variable name after 'var'\n");
+                printf("Error: Expected variable name after type declaration\n");
                 exit(1);
             }
 
-            if (strcmp(current->value, "num") == 0 || 
-                strcmp(current->value, "log") == 0 || 
-                strcmp(current->value, "str") == 0) {
-                printf("Error: '%s' is a reserved keyword and cannot be used as a variable name\n", current->value);
-                exit(1);
-            }
-            
             char varName[MAX_VAR_NAME_LENGTH];
             strcpy(varName, current->value);
             nextToken();
@@ -81,27 +93,39 @@ ASTNode* statement() {
                 exit(1);
             }
             nextToken();
-            ASTNode *node = allocateNode(NODE_VAR_DECL);
+            node = allocateNode(NODE_VAR_DECL);
             strcpy(node->varDecl.name, varName);
             node->varDecl.value = expr;
-            insertSymbol(varName, evaluateExpression(expr));
-            return node;
+            
+            // Insert symbol with appropriate type
+            if (expr->type == NODE_STRING_LITERAL) {
+                updateOrInsertSymbol(varName, -1, TYPE_STRING);
+            } else {
+                updateOrInsertSymbol(varName, evaluateExpression(expr), TYPE_NUMBER);
+            }
+            
+            printf("Variable declaration parsed successfully\n");
+            break;
         }
 
         case IF: {
-            return conditional();
+            node = conditional();
+            break;
         }
 
         case WHILE: {
-            return loop();
+            node = loop();
+            break;
         }
 
         case DO: {
-            return doWhileLoop();
+            node = doWhileLoop();
+            break;
         }
 
         case FOR: {
-            return forLoop();
+            node = forLoop();
+            break;
         }
 
         case FUNC: {
@@ -110,7 +134,8 @@ ASTNode* statement() {
                 printf("Error: Expected function name after 'func'\n");
                 exit(1);
             }
-           return functionDef();
+            node = functionDef();
+            break;
         }
 
         case PRINT: {
@@ -121,9 +146,10 @@ ASTNode* statement() {
                 exit(1);
             }
             nextToken();
-            ASTNode *node = allocateNode(NODE_PRINT);
+            node = allocateNode(NODE_PRINT);
             node->print.expr = expr;
-            return node;
+            printf("Statement parsed successfully\n");
+            break;
         }
 
         default: {
@@ -131,4 +157,32 @@ ASTNode* statement() {
             exit(1);
         }
     }
+    
+    // Ensure node doesn't have a circular reference
+    if (node) {
+        // Verify node doesn't point to itself
+        if (node->next == node) {
+            printf("Warning: Circular reference detected in node. Setting next to NULL.\n");
+            node->next = NULL;
+        }
+        
+        // Verify node's children don't point back to node
+        switch (node->type) {
+            case NODE_ASSIGN:
+                if (node->assign.expr == node) {
+                    printf("Warning: Circular reference in assignment expression. Setting to NULL.\n");
+                    node->assign.expr = NULL;
+                }
+                break;
+            case NODE_VAR_DECL:
+                if (node->varDecl.value == node) {
+                    printf("Warning: Circular reference in variable declaration. Setting value to NULL.\n");
+                    node->varDecl.value = NULL;
+                }
+                break;
+            // Add similar checks for other node types with children
+        }
+    }
+    
+    return node;
 }

@@ -1,6 +1,5 @@
 num x = 10 ;
-num y = 5 ;
-
+num y = 15 ;
 print x ;
 print y ;
 

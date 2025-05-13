@@ -7,6 +7,9 @@
 #include "components/parsers/header/parser.h"
 #include "components/ast_visualizer.h"
 #include "components/ast_json_exporter.h"
+#include "semantic.h"
+
+extern ASTNode *astHead;
 
 struct Stack;
 
@@ -46,17 +49,31 @@ void compileFile(const char* filename) {
     
     #define MAX_STATEMENTS 100
     ASTNode* statements[MAX_STATEMENTS];
+    ASTNode* prevNode = NULL;
+    astHead = NULL;  // Reset AST head
     
     while (current && current->type != END && statementCount < MAX_STATEMENTS) {
         ASTNode* node = statement();
+        if (!node) {
+            printf("Warning: statement() returned NULL\n");
+            continue;
+        }
         
-        printf("\n--- AST for statement ---\n");
-        visualizeASTRoot(node);
-        printf("-------------------------\n\n");
-    
+        // Store the node in our array
         statements[statementCount++] = node;
         
-        // nextToken();
+        // If this is the first statement, set it as the AST head
+        if (statementCount == 1) {
+            astHead = node;
+            printf("AST head set to node type: %d\n", node->type);
+        } else if (prevNode) {
+            // Link the previous node to this one
+            prevNode->next = node;
+            printf("Linked node %d to node %d\n", statementCount-2, statementCount-1);
+        }
+        
+        // Update prevNode for the next iteration
+        prevNode = node;
     }
 
     // Check if all braces and parentheses are properly closed
@@ -69,9 +86,39 @@ void compileFile(const char* filename) {
         exit(1);
     }
     
-    // Export all ASTs to a single JSON file
-    exportASTsToSingleJSON(statements, statementCount, "ast_all_statements.json");
-
+    // Generate output filename (replace .cx with .asm)
+    char outputFile[256];
+    strcpy(outputFile, filename);
+    char *ext = strrchr(outputFile, '.');
+    if (ext) {
+        strcpy(ext, ".asm");
+    } else {
+        strcat(outputFile, ".asm");
+    }
+    
+    // Print debug information
+    printf("\nParsing completed. Starting semantic analysis...\n");
+    
+    // Check if astHead is NULL
+    if (!astHead) {
+        printf("Error: AST is empty. No code to analyze.\n");
+        exit(1);
+    } else {
+        printf("AST head is not NULL, type: %d\n", astHead->type);
+        
+        // Debug: Print the first few nodes to verify the AST structure
+        ASTNode* temp = astHead;
+        int count = 0;
+        while (temp && count < 5) {
+            printf("Node %d: type %d\n", count, temp->type);
+            temp = temp->next;
+            count++;
+        }
+    }
+    
+    // Perform semantic analysis and code generation
+    analyzeAndGenerateCode(astHead, outputFile);
+    
     printf("\nCompilation completed successfully.\n");
     freeArena(); 
 }

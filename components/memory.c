@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <string.h>
 #include "memory.h"
 
 // Define the memory block structure
@@ -32,16 +33,15 @@ void* arenaAlloc(size_t size) {
 
 ASTNode* allocateNode(NodeType type) {
     ASTNode* node = arenaAlloc(sizeof(ASTNode));
+    if (!node) {
+        printf("Error: Failed to allocate memory for AST node\n");
+        exit(1);
+    }
+    
+    // Initialize the node
+    memset(node, 0, sizeof(ASTNode));  // Zero out all fields
     node->type = type;
     node->next = NULL;
-    
-    // Add to AST linked list
-    if (!astHead) {
-        astHead = node;
-    } else {
-        astTail->next = node;
-    }
-    astTail = node;
     
     return node;
 }
