@@ -3,6 +3,10 @@ num y = 15 ;
 print x ;
 print y ;
 
+str a = "Hello" ;
+
+print a ;
+
 x = x + y ;
 
 print x ;

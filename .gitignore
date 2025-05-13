@@ -7,8 +7,6 @@
 *.log
 *.txt
 *.csv
-*.md
-*.sh
 *.py
 *.pl
 *.rb

@@ -62,45 +62,53 @@ void generateCode(ASTNode *node, FILE *asmFile)
     {
     case NODE_NUMBER:
         printf("Generating code for number: %d\n", node->number);
-        fprintf(asmFile, "    mov rax, %d\n", node->number);
+        if (asmFile) {
+            fprintf(asmFile, "    mov rax, %d\n", node->number);
+        }
         break;
 
     case NODE_VAR_REF:
         printf("Generating code for variable reference: %s\n", node->varRef.name);
-        fprintf(asmFile, "    mov rax, [%s]\n", node->varRef.name);
+        if (asmFile) {
+            fprintf(asmFile, "    mov rax, [%s]\n", node->varRef.name);
+        }
         break;
 
     case NODE_BINARY_OP:
         printf("Generating code for binary op: %c\n", node->binaryOp.op);
         // Generate code for the right operand first (will be on stack)
         generateCode(node->binaryOp.right, asmFile);
-        fprintf(asmFile, "    push rax\n");  // Save right operand on stack
+        if (asmFile) {
+            fprintf(asmFile, "    push rax\n");  // Save right operand on stack
+        }
         
         // Generate code for the left operand (will be in rax)
         generateCode(node->binaryOp.left, asmFile);
         
-        // Pop right operand into rbx
-        fprintf(asmFile, "    pop rbx\n");
-        
-        // Perform the operation
-        switch (node->binaryOp.op)
-        {
-        case '+':
-            fprintf(asmFile, "    add rax, rbx\n");
-            break;
-        case '-':
-            fprintf(asmFile, "    sub rax, rbx\n");
-            break;
-        case '*':
-            fprintf(asmFile, "    imul rax, rbx\n");
-            break;
-        case '/':
-            fprintf(asmFile, "    xor rdx, rdx\n");  // Clear rdx for division
-            fprintf(asmFile, "    idiv rbx\n");
-            break;
-        default:
-            printf("Error: Unknown binary operator %c\n", node->binaryOp.op);
-            break;
+        if (asmFile) {
+            // Pop right operand into rbx
+            fprintf(asmFile, "    pop rbx\n");
+            
+            // Perform the operation
+            switch (node->binaryOp.op)
+            {
+            case '+':
+                fprintf(asmFile, "    add rax, rbx\n");
+                break;
+            case '-':
+                fprintf(asmFile, "    sub rax, rbx\n");
+                break;
+            case '*':
+                fprintf(asmFile, "    imul rax, rbx\n");
+                break;
+            case '/':
+                fprintf(asmFile, "    xor rdx, rdx\n");  // Clear rdx for division
+                fprintf(asmFile, "    idiv rbx\n");
+                break;
+            default:
+                printf("Error: Unknown binary operator %c\n", node->binaryOp.op);
+                break;
+            }
         }
         break;
 
@@ -113,31 +121,71 @@ void generateCode(ASTNode *node, FILE *asmFile)
             // Generate code for the string literal (this will put its address in rax)
             generateCode(node->varDecl.value, asmFile);
             // Store the string address in the variable
-            fprintf(asmFile, "    mov [%s], rax\n", node->varDecl.name);
+            if (asmFile) {
+                fprintf(asmFile, "    mov [%s], rax\n", node->varDecl.name);
+            }
         } else {
             // For numeric values, generate code as before
             generateCode(node->varDecl.value, asmFile);
-            fprintf(asmFile, "    mov [%s], rax\n", node->varDecl.name);
+            if (asmFile) {
+                fprintf(asmFile, "    mov [%s], rax\n", node->varDecl.name);
+            }
         }
         break;
 
     case NODE_ASSIGN:
         printf("Generating code for assignment: %s\n", node->assign.name);
         generateCode(node->assign.expr, asmFile);
-        fprintf(asmFile, "    mov [%s], rax\n", node->assign.name);
+        if (asmFile) {
+            fprintf(asmFile, "    mov [%s], rax\n", node->assign.name);
+        }
         break;
 
     case NODE_PRINT:
         printf("Generating code for print\n");
-        generateCode(node->print.expr, asmFile);
         
-        // Check if we're printing a string or a number
-        if (node->print.expr->type == NODE_STRING_LITERAL) {
-            fprintf(asmFile, "    mov rdi, rax\n");
-            fprintf(asmFile, "    call print_str\n");
+        // Check if we're printing a variable that might contain a string
+        if (node->print.expr->type == NODE_VAR_REF) {
+            const char* varName = node->print.expr->varRef.name;
+            printf("Printing variable reference: %s\n", varName);
+            
+            // Check if this variable was declared as a string
+            int isString = 0;
+            for (int i = 0; i < symCount; i++) {
+                if (strcmp(symTable[i].name, varName) == 0) {
+                    if (symTable[i].type == TYPE_STRING) {
+                        isString = 1;
+                        printf("Variable %s is a string\n", varName);
+                    }
+                    break;
+                }
+            }
+            
+            generateCode(node->print.expr, asmFile);
+            
+            if (asmFile) {
+                if (isString) {
+                    fprintf(asmFile, "    mov rdi, rax\n");
+                    fprintf(asmFile, "    call print_str\n");
+                } else {
+                    fprintf(asmFile, "    mov rdi, rax\n");
+                    fprintf(asmFile, "    call print_int\n");
+                }
+            }
+        } else if (node->print.expr->type == NODE_STRING_LITERAL) {
+            printf("Printing string literal\n");
+            generateCode(node->print.expr, asmFile);
+            if (asmFile) {
+                fprintf(asmFile, "    mov rdi, rax\n");
+                fprintf(asmFile, "    call print_str\n");
+            }
         } else {
-            fprintf(asmFile, "    mov rdi, rax\n");
-            fprintf(asmFile, "    call print_int\n");
+            printf("Printing numeric expression\n");
+            generateCode(node->print.expr, asmFile);
+            if (asmFile) {
+                fprintf(asmFile, "    mov rdi, rax\n");
+                fprintf(asmFile, "    call print_int\n");
+            }
         }
         break;
 
@@ -240,13 +288,12 @@ void generateCode(ASTNode *node, FILE *asmFile)
             strcpy(stringLiterals[stringLiteralCount], node->stringLiteral.value);
             stringLiteralCount++;
             printf("Added string literal: '%s' at index %d\n", node->stringLiteral.value, strIndex);
-            
-            // Add the string to the data section
-            fprintf(asmFile, "    str_%d db \"%s\", 0\n", strIndex, node->stringLiteral.value);
         }
         
-        // Load the address of the string
-        fprintf(asmFile, "    lea rax, [rel str_%d]\n", strIndex);
+        // Load the address of the string - don't add the string here
+        if (asmFile) {
+            fprintf(asmFile, "    lea rax, [rel str_%d]\n", strIndex);
+        }
         break;
 
     default:
@@ -283,12 +330,26 @@ void generateAssembly(const char *filename)
     printf("Symbol count: %d\n", symCount);
     printf("AST head address: %p\n", (void*)astHead);
 
-    // Data Section
+    // === FIRST PASS: COLLECT string literals and symbols ===
+    if (astHead != NULL) {
+        printf("Collecting data by generating code once...\n");
+        codegenResetVisited();
+        generateCode(astHead, NULL); // null FILE pointer, just collect
+        printf("First pass completed, collected %d string literals\n", stringLiteralCount);
+    }
+
+    // === Emit DATA section ===
     fprintf(asmFile, "; Assembly code generated by CompilerX\n");
     fprintf(asmFile, "section .data\n");
     fprintf(asmFile, "    newline db 10\n");  // Newline character
     fprintf(asmFile, "    minus_sign db '-'\n");  // Minus sign for negative numbers
     fprintf(asmFile, "    buffer times 20 db 0\n");  // Buffer for integer to string conversion
+
+    // Now stringLiteralCount should be > 0
+    for (int i = 0; i < stringLiteralCount; i++) {
+        fprintf(asmFile, "    str_%d db \"%s\", 0\n", i, stringLiterals[i]);
+        printf("Added string literal to data section: '%s'\n", stringLiterals[i]);
+    }
 
     // Add variables to data section
     for (int i = 0; i < symCount; i++) {
@@ -300,26 +361,41 @@ void generateAssembly(const char *filename)
     fprintf(asmFile, "section .text\n");
     fprintf(asmFile, "    global _start\n");
 
-    // Add print_str function
+    // Add print_str function - simplified version
     fprintf(asmFile, "print_str:\n");
     fprintf(asmFile, "    push rbp\n");
     fprintf(asmFile, "    mov rbp, rsp\n");
     fprintf(asmFile, "    mov rsi, rdi\n");  // String address is in rdi
-    fprintf(asmFile, "    mov rdx, 0\n");    // Initialize length counter
-    fprintf(asmFile, ".strlen_loop:\n");
-    fprintf(asmFile, "    cmp byte [rsi + rdx], 0\n");  // Check for null terminator
-    fprintf(asmFile, "    je .print_it\n");
-    fprintf(asmFile, "    inc rdx\n");       // Increment length
-    fprintf(asmFile, "    jmp .strlen_loop\n");
-    fprintf(asmFile, ".print_it:\n");
-    fprintf(asmFile, "    mov rax, 1\n");    // sys_write
-    fprintf(asmFile, "    mov rdi, 1\n");    // stdout
-    fprintf(asmFile, "    syscall\n");
-    fprintf(asmFile, "    mov rax, 1\n");    // sys_write
-    fprintf(asmFile, "    mov rdi, 1\n");    // stdout
-    fprintf(asmFile, "    mov rsi, newline\n");
-    fprintf(asmFile, "    mov rdx, 1\n");    // Length
-    fprintf(asmFile, "    syscall\n");
+
+    // Print the string character by character
+    fprintf(asmFile, ".print_loop:\n");
+    fprintf(asmFile, "    movzx eax, byte [rsi]\n");  // Load character with zero extension
+    fprintf(asmFile, "    test al, al\n");            // Check for null terminator
+    fprintf(asmFile, "    jz .print_done\n");         // Exit if null
+
+    // Print the character
+    fprintf(asmFile, "    push rsi\n");               // Save string pointer
+    fprintf(asmFile, "    push rax\n");               // Save character
+    fprintf(asmFile, "    mov [buffer], al\n");       // Store character in buffer
+    fprintf(asmFile, "    mov rax, 1\n");             // sys_write
+    fprintf(asmFile, "    mov rdi, 1\n");             // stdout
+    fprintf(asmFile, "    lea rsi, [buffer]\n");      // Address of buffer
+    fprintf(asmFile, "    mov rdx, 1\n");             // Length = 1
+    fprintf(asmFile, "    syscall\n");                // Call kernel
+    fprintf(asmFile, "    pop rax\n");                // Restore character
+    fprintf(asmFile, "    pop rsi\n");                // Restore string pointer
+
+    // Move to next character
+    fprintf(asmFile, "    inc rsi\n");                // Next character
+    fprintf(asmFile, "    jmp .print_loop\n");        // Repeat
+
+    // Print newline and return
+    fprintf(asmFile, ".print_done:\n");
+    fprintf(asmFile, "    mov rax, 1\n");             // sys_write
+    fprintf(asmFile, "    mov rdi, 1\n");             // stdout
+    fprintf(asmFile, "    lea rsi, [newline]\n");     // Address of newline
+    fprintf(asmFile, "    mov rdx, 1\n");             // Length = 1
+    fprintf(asmFile, "    syscall\n");                // Call kernel
     fprintf(asmFile, "    mov rsp, rbp\n");
     fprintf(asmFile, "    pop rbp\n");
     fprintf(asmFile, "    ret\n\n");
@@ -354,11 +430,11 @@ void generateAssembly(const char *filename)
     fprintf(asmFile, ".digit_loop:\n");
     fprintf(asmFile, "    dec rsi\n");             // Move back in buffer
     fprintf(asmFile, "    xor rdx, rdx\n");        // Clear rdx for division
-    fprintf(asmFile, "    div rcx\n");             // rax / 10, remainder in rdx
-    fprintf(asmFile, "    add dl, '0'\n");         // Convert to ASCII
-    fprintf(asmFile, "    mov [rsi], dl\n");       // Store in buffer
-    fprintf(asmFile, "    test rax, rax\n");
-    fprintf(asmFile, "    jnz .digit_loop\n");
+    fprintf(asmFile, "    div rcx\n");             // Divide by 10
+    fprintf(asmFile, "    add dl, '0'\n");         // Convert remainder to ASCII
+    fprintf(asmFile, "    mov [rsi], dl\n");       // Store digit
+    fprintf(asmFile, "    test rax, rax\n");       // Check if quotient is zero
+    fprintf(asmFile, "    jnz .digit_loop\n");     // If not, continue
 
     // Calculate string length and print
     fprintf(asmFile, "    mov rdx, rbx\n");
@@ -380,10 +456,10 @@ void generateAssembly(const char *filename)
     
     fprintf(asmFile, "_start:\n");
 
+    // === SECOND PASS: Generate actual code ===
     if (astHead != NULL) {
-        printf("Generating code from AST...\n");
-        // Reset visited nodes tracking for code generation
-        codegenResetVisited();
+        printf("Generating code from AST (second pass)...\n");
+        codegenResetVisited(); // reset again
         generateCode(astHead, asmFile);
         printf("Code generation from AST completed\n");
     } else {
