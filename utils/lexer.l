@@ -36,6 +36,7 @@ AND         "&&"
 OR          "||"
 ID          [a-zA-Z_][a-zA-Z0-9_]*
 RELOP       "=="|"!="|"<"|">"|"<="|">="
+STRING      \"[^\"]*\"
 
 %%
 {VAR}       { 
@@ -46,6 +47,14 @@ RELOP       "=="|"!="|"<"|">"|"<="|">="
                 addToken(VAR, yytext); 
                 printf("TOKEN: KEYWORD, VALUE: %s\n", yytext); 
             }  
+{STRING}    {
+                // Remove the quotes from the string
+                char value[100];
+                strncpy(value, yytext + 1, strlen(yytext) - 2);
+                value[strlen(yytext) - 2] = '\0';
+                addToken(STRING_LITERAL, value);
+                printf("TOKEN: STRING_LITERAL, VALUE: %s\n", value);
+            }
 {ID}        {
                 if (strcmp(yytext, "num") == 0 || 
                     strcmp(yytext, "log") == 0 || 

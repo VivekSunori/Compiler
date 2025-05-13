@@ -37,10 +37,15 @@ int evaluateExpression(ASTNode *expr) {
  * @return The parsed factor expression.
  */
 ASTNode* factor() {
-    printf("%s",current->next->value);
+    printf("%s", current->next->value);
     if (current && current->type == NUMBER) {
         ASTNode *node = allocateNode(NODE_NUMBER);
         node->number = atoi(current->value);
+        nextToken();
+        return node;
+    } else if (current && current->type == STRING_LITERAL) {
+        ASTNode *node = allocateNode(NODE_STRING_LITERAL);
+        strcpy(node->stringLiteral.value, current->value);
         nextToken();
         return node;
     } else if (current && current->type == ID) {
@@ -49,12 +54,26 @@ ASTNode* factor() {
             printf("Semantic Error: Undefined variable '%s'\n", current->value);
             exit(1);
         }
-        ASTNode *node = allocateNode(NODE_NUMBER);
-        node->number = symTable[index].value;
+        
+        // Create a node for the variable reference
+        ASTNode *node = allocateNode(NODE_VAR_REF);
+        strcpy(node->varRef.name, current->value);
+        
+        printf("Variable reference: %s\n", current->value);
+        
+        nextToken();
+        return node;
+    } else if (current && current->type == LPAREN) {
+        nextToken();
+        ASTNode *node = parseExpression(0);
+        if (current->type != RPAREN) {
+            printf("Syntax Error: Expected ')'\n");
+            exit(1);
+        }
         nextToken();
         return node;
     } else {
-        printf("Error: Expected a number or identifier\n");
+        printf("Syntax Error: Expected number, string, variable, or '('\n");
         exit(1);
     }
 }

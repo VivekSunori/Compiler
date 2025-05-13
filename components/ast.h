@@ -7,6 +7,9 @@
 
 #define ARENA_BLOCK_SIZE 8192 // 8KB blocks for memory pooling in order to remove memory leaks
 
+// Forward declaration
+typedef struct ASTNode ASTNode;
+
 typedef enum
 {
     NODE_NUMBER,
@@ -22,7 +25,9 @@ typedef enum
     NODE_LOGICAL_OP,
     NODE_RELATIONAL_OP,
     NODE_COMPARISON_OP,
-    NODE_PRINT
+    NODE_PRINT,
+    NODE_VAR_REF,
+    NODE_STRING_LITERAL  // New node type for string literals
 } NodeType;
 
 // Arena allocator structure
@@ -34,7 +39,7 @@ typedef struct Arena
     struct Arena *next;
 } Arena;
 
-typedef struct ASTNode ASTNode;
+// Define the ASTNode structure
 struct ASTNode
 {
     NodeType type;
@@ -44,12 +49,12 @@ struct ASTNode
         struct
         {
             char op;
-            struct ASTNode *left, *right;
+            ASTNode *left, *right;
         } binaryOp;
         struct
         {
             char name[50];
-            struct ASTNode *expr;
+            ASTNode *expr;
         } assign;
         struct
         {
@@ -58,56 +63,60 @@ struct ASTNode
         } varDecl;
         struct
         {
-            struct ASTNode *condition;
-            struct ASTNode *thenStmt;
-            struct ASTNode *elseStmt;
+            ASTNode *condition;
+            ASTNode *thenStmt;
+            ASTNode *elseStmt;
         } ifNode;
         struct
         {
-            struct ASTNode *condition;
-            struct ASTNode *body;
+            ASTNode *condition;
+            ASTNode *body;
         } whileNode;
         struct
         {
-            struct ASTNode *condition;
-            struct ASTNode *body;
+            ASTNode *condition;
+            ASTNode *body;
         } doWhileNode;
         struct
         {
             char name[50];
-            struct ASTNode *params;
-            struct ASTNode *body;
+            ASTNode *params;
+            ASTNode *body;
         } funcDef;
         struct
         {
             char name[50];
-            struct ASTNode *args;
+            ASTNode *args;
         } funcCall;
         struct
         {
-            struct ASTNode *initialization;
-            struct ASTNode *condition;
-            struct ASTNode *increment;
-            struct ASTNode *body;
+            ASTNode *initialization;
+            ASTNode *condition;
+            ASTNode *increment;
+            ASTNode *body;
         } forNode;
         struct
         {
             char op[3];
-            struct ASTNode *left, *right;
+            ASTNode *left, *right;
         } relOp;
-
         struct
         {
             char op[3];
-            struct ASTNode *left, *right;
+            ASTNode *left, *right;
         } logicalOp;
-
         int boolean;
         struct {
-            struct ASTNode *expr;
+            ASTNode *expr;
         } print;
+        struct {
+            char name[50];  // Variable name for reference
+        } varRef;
+        struct {
+            char value[256];  // String literal value
+        } stringLiteral;
     };
-    struct ASTNode *next;
+    ASTNode *next;
 };
 
 // Global AST head and tail

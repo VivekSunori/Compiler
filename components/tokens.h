@@ -27,6 +27,7 @@ typedef enum {
     RELOP,
     VAR,
     PRINT,
+    STRING_LITERAL,
     END
 } TokenType;
 

@@ -31,10 +31,4 @@ gcc -c semantic.c -o obj/semantic.o
 REM Link all object files
 gcc obj/compiler.o obj/components/memory.o obj/components/symbol_table.o obj/components/tokens.o obj/components/ast_visualizer.o obj/components/ast_json_exporter.o obj/components/parsers/parser.o obj/components/parsers/expressions.o obj/components/parsers/statements.o obj/components/parsers/conditionals.o obj/components/parsers/functions.o obj/components/parsers/loops.o obj/semantic.o obj/utils/lex.yy.o -o cmpx.exe
 
-echo Build completed!
-
-
-
-
-
 
