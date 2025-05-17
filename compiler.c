@@ -22,6 +22,12 @@ extern struct Stack bracesStack;
 extern struct Stack parenStack;
 extern int isEmpty(struct Stack *stack);
 
+// Add global statement count
+int statementCount = 0;
+
+// Add a flag to control verbose output
+int verboseOutput = 0;
+
 /**
  * @brief Compiles the given file.
  * 
@@ -38,22 +44,54 @@ void compileFile(const char* filename) {
         exit(1);
     }
 
-    char source[1000] = {0};
-    char line[100];
+    // Determine output filename (replace .cx with .asm)
+    char outputFile[256];
+    strncpy(outputFile, filename, sizeof(outputFile) - 5); // Leave room for extension
+    outputFile[sizeof(outputFile) - 5] = '\0';
+    
+    char *dotPos = strrchr(outputFile, '.');
+    if (dotPos) {
+        *dotPos = '\0'; // Remove extension
+    }
+    strcat(outputFile, ".asm");
+    
+    if (verboseOutput) {
+        printf("Output file will be: %s\n", outputFile);
+    } else {
+        printf("Compiling %s to %s\n", filename, outputFile);
+    }
+
+    // Read source code
+    char source[10000] = {0}; // Increased buffer size
+    char line[1000]; // Increased line buffer
     while (fgets(line, sizeof(line), file)) {
+        // Check if we have enough space in the source buffer
+        if (strlen(source) + strlen(line) >= sizeof(source) - 1) {
+            printf("Error: Source file too large for buffer\n");
+            fclose(file);
+            exit(1);
+        }
         strcat(source, line);
     }
 
+    // Tokenize the source
     tokenize(file);
     fclose(file);
 
+    // Parse the tokens
     current = head;
-    int statementCount = 0;
+    if (!current) {
+        printf("Error: No tokens to parse\n");
+        exit(1);
+    }
     
     #define MAX_STATEMENTS 100
     ASTNode* statements[MAX_STATEMENTS];
     ASTNode* prevNode = NULL;
     astHead = NULL;  // Reset AST head
+    
+    // Initialize statement count
+    int statementCount = 0;
     
     while (current && current->type != END_OF_FILE && statementCount < MAX_STATEMENTS) {
         ASTNode* node = statement();
@@ -87,16 +125,6 @@ void compileFile(const char* filename) {
     if (!isEmpty(&parenStack)) {
         printf("Syntax Error: Unclosed parentheses '(' detected\n");
         exit(1);
-    }
-    
-    // Generate output filename (replace .cx with .asm)
-    char outputFile[256];
-    strcpy(outputFile, filename);
-    char *ext = strrchr(outputFile, '.');
-    if (ext) {
-        strcpy(ext, ".asm");
-    } else {
-        strcat(outputFile, ".asm");
     }
     
     // Print debug information
