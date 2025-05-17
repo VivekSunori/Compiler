@@ -60,9 +60,9 @@ void nextToken() {
             }
         }
         
-        // printf("Next token is type: %s , value: %s\n", 
-        //        current ? tokenTypeToString(current->type) : "NULL", 
-        //        current ? current->value : "NULL");
+        printf("Next token is type: %s , value: %s\n", 
+               current ? tokenTypeToString(current->type) : "NULL", 
+               current ? current->value : "NULL");
     }
 }
 

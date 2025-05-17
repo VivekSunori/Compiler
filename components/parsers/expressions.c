@@ -1,79 +1,78 @@
 #include "../memory.h"
 #include "header/parser.h"
 #include "header/expressions.h"
+#include "../tokens.h"  // Add this include for token types
 
-// Keep the definition here
-int evaluateExpression(ASTNode *expr) {
-    if (!expr) return 0;
-    
-    switch (expr->type) {
-        case NODE_NUMBER:
-            return expr->number;
-        case NODE_BINARY_OP:
-            switch (expr->binaryOp.op) {
-                case '+': return evaluateExpression(expr->binaryOp.left) + evaluateExpression(expr->binaryOp.right);
-                case '-': return evaluateExpression(expr->binaryOp.left) - evaluateExpression(expr->binaryOp.right);
-                case '*': return evaluateExpression(expr->binaryOp.left) * evaluateExpression(expr->binaryOp.right);
-                case '/': {
-                    int divisor = evaluateExpression(expr->binaryOp.right);
-                    if (divisor == 0) {
-                        printf("Error: Division by zero\n");
-                        exit(1);
-                    }
-                    return evaluateExpression(expr->binaryOp.left) / divisor;
-                }
-                default: return 0;
-            }
-        default: return 0;
+extern Token* current;
+extern void nextToken();
+
+// Forward declarations
+ASTNode* factor();
+ASTNode* primary();
+ASTNode* multiplicative();
+ASTNode* additive();
+ASTNode* comparison();
+ASTNode* logical();
+ASTNode* parseExpression(int minPrecedence);
+ASTNode* functionCall(const char* name);
+
+// Primary expression: factor or (expression)
+ASTNode* primary() {
+    if (current && current->type == LPAREN) {
+        nextToken();
+        ASTNode* node = parseExpression(0);
+        
+        if (current && current->type == RPAREN) {
+            nextToken();
+        } else {
+            printf("Error: Expected closing parenthesis\n");
+            exit(1);
+        }
+        
+        return node;
     }
+    
+    return factor();
 }
- 
 
-/**
- * @brief  Parses a factor expression.
- *
- *  This function helps with parsing by parsing a factor expression, which can be a number or an identifier. Other token types will be added later.
- * 
- * @return The parsed factor expression.
- */
+// Factor: number, identifier, or function call
 ASTNode* factor() {
-    printf("%s", current->next->value);
-    if (current && current->type == NUMBER) {
-        ASTNode *node = allocateNode(NODE_NUMBER);
+    if (!current) {
+        printf("Error: Unexpected end of input\n");
+        exit(1);
+    }
+    
+    if (current->type == NUMBER) {
+        ASTNode* node = allocateNode(NODE_NUMBER);
         node->number = atoi(current->value);
         nextToken();
         return node;
-    } else if (current && current->type == STRING_LITERAL) {
-        ASTNode *node = allocateNode(NODE_STRING_LITERAL);
+    } else if (current->type == STRING_LITERAL) {
+        ASTNode* node = allocateNode(NODE_STRING_LITERAL);
         strcpy(node->stringLiteral.value, current->value);
         nextToken();
         return node;
-    } else if (current && current->type == ID) {
-        int index = lookupSymbol(current->value);
-        if (index == -1) {
-            printf("Semantic Error: Undefined variable '%s'\n", current->value);
-            exit(1);
-        }
-        
-        // Create a node for the variable reference
-        ASTNode *node = allocateNode(NODE_VAR_REF);
-        strcpy(node->varRef.name, current->value);
-        
-        printf("Variable reference: %s\n", current->value);
-        
+    } else if (current->type == BOOLEAN_LITERAL) {
+        ASTNode* node = allocateNode(NODE_BOOLEAN_LITERAL);
+        strcpy(node->booleanLiteral.value, current->value);
         nextToken();
         return node;
-    } else if (current && current->type == LPAREN) {
+    } else if (current->type == ID) {
+        char name[MAX_VAR_NAME_LENGTH];
+        strcpy(name, current->value);
         nextToken();
-        ASTNode *node = parseExpression(0);
-        if (current->type != RPAREN) {
-            printf("Syntax Error: Expected ')'\n");
-            exit(1);
+        
+        // Check if this is a function call
+        if (current && current->type == LPAREN) {
+            return functionCall(name);
         }
-        nextToken();
+        
+        // Otherwise, it's a variable reference
+        ASTNode* node = allocateNode(NODE_VAR_REF);
+        strcpy(node->varRef.name, name);
         return node;
     } else {
-        printf("Syntax Error: Expected number, string, variable, or '('\n");
+        printf("Error: Unexpected token '%s'\n", current->value);
         exit(1);
     }
 }
@@ -157,31 +156,58 @@ ASTNode* parseExpression(int minPrecedence) {
 }
 
 ASTNode* parseCondition(int minPrecedence) {
+    printf("Parsing condition, current token: %s, type: %s\n", 
+           current ? current->value : "NULL", 
+           current ? tokenTypeToString(current->type) : "NULL");
+    
     ASTNode *left = parseExpression(0); 
+    
+    printf("After parsing left expression, current token: %s, type: %s\n", 
+           current ? current->value : "NULL", 
+           current ? tokenTypeToString(current->type) : "NULL");
 
-    while (current && (isLogicalOp(current->value) || isRelationalOp(current->value)) && 
-           getPrecedence(current->value[0]) >= minPrecedence) {
+    // Handle relational operators
+    if (current && current->type == RELOP) {
+        printf("Found relational operator: %s\n", current->value);
+        
         char op[3];
         strcpy(op, current->value);
-        int precedence = getPrecedence(op[0]);
         nextToken();
-
-        ASTNode *right = parseCondition(precedence);
-
-        ASTNode *node = NULL;
-
-        if (isLogicalOp(op)) {
-            node = allocateNode(NODE_LOGICAL_OP);
-            strcpy(node->logicalOp.op, op);
-        } else if (isRelationalOp(op)) {
-            node = allocateNode(NODE_RELATIONAL_OP);
-            strcpy(node->relOp.op, op);
-        }
+        
+        printf("After consuming relational operator, current token: %s, type: %s\n", 
+               current ? current->value : "NULL", 
+               current ? tokenTypeToString(current->type) : "NULL");
+        
+        ASTNode *right = parseExpression(0);
+        
+        ASTNode *node = allocateNode(NODE_RELATIONAL_OP);
+        strcpy(node->relOp.op, op);
+        node->relOp.left = left;
+        node->relOp.right = right;
+        
+        left = node;  // Update left for potential logical operations
+    }
+    
+    // Handle logical operators (AND, OR)
+    while (current && (current->type == AND || current->type == OR)) {
+        printf("Found logical operator: %s\n", current->value);
+        
+        TokenType opType = current->type;
+        nextToken();
+        
+        // Parse the right side of the logical operation
+        ASTNode *right = parseCondition(0);  // Recursively parse the right condition
+        
+        ASTNode *node = allocateNode(NODE_LOGICAL_OP);
+        node->logicalOp.op[0] = (opType == AND) ? '&' : '|';
+        node->logicalOp.op[1] = (opType == AND) ? '&' : '|';
+        node->logicalOp.op[2] = '\0';
         node->logicalOp.left = left;
         node->logicalOp.right = right;
-        left = node;
+        
+        left = node;  // Update left for potential additional logical operations
     }
-
+    
     return left;
 }
 
@@ -191,6 +217,8 @@ int getPrecedence(char op) {
     if (op == '+' || op == '-') return 5;
     if (op == '*' || op == '/') return 6;
     if (op == '^') return 7;
+    // Add precedence for relational operators
+    if (op == '<' || op == '>' || op == '=') return 4;
     return 0;
 }
 
@@ -203,37 +231,39 @@ int isRightAssociative(char op) {
 
 ASTNode* logical() {
     ASTNode* left = comparison();
-    while (current && current->type == OPERATOR && (strcmp(current->value, "&&") == 0 || strcmp(current->value, "||") == 0)) {
+    
+    while (current && current->type == LOGICAL_OP) {
         char op[3];
         strcpy(op, current->value);
         nextToken();
-        ASTNode* right = comparison();
+        
         ASTNode* node = allocateNode(NODE_LOGICAL_OP);
-        strcpy(node->logicalOp.op, op);  // Use strcpy instead of strdup
+        strcpy(node->logicalOp.op, op);
         node->logicalOp.left = left;
-        node->logicalOp.right = right;
+        node->logicalOp.right = comparison();
+        
         left = node;
     }
+    
     return left;
 }
 
 ASTNode* comparison() {
-    ASTNode* left = parseExpression(1); 
-    if (current && current->type == OPERATOR && isComparisonOperator(current->value)) {
+    ASTNode* left = additive();
+    
+    if (current && current->type == RELATIONAL_OP) {
         char op[3];
         strcpy(op, current->value);
         nextToken();
-        ASTNode* right = parseExpression(1);
         
-        // Use NODE_RELATIONAL_OP instead of NODE_COMPARISON_OP
         ASTNode* node = allocateNode(NODE_RELATIONAL_OP);
-        
-        // Use relOp field instead of comparisonOp
-        strcpy(node->relOp.op, op);  // Copy the operator string
+        strcpy(node->relOp.op, op);
         node->relOp.left = left;
-        node->relOp.right = right;
+        node->relOp.right = additive();
+        
         return node;
     }
+    
     return left;
 }
 
@@ -255,4 +285,44 @@ int isComparisonOperator(const char *value) {
            strcmp(value, ">") == 0 || 
            strcmp(value, "<=") == 0 || 
            strcmp(value, ">=") == 0;
+}
+
+// Additive expression: multiplicative (('+' | '-') multiplicative)*
+ASTNode* additive() {
+    ASTNode* left = multiplicative();
+    
+    while (current && current->type == OPERATOR && 
+           (current->value[0] == '+' || current->value[0] == '-')) {
+        char op = current->value[0];
+        nextToken();
+        
+        ASTNode* node = allocateNode(NODE_BINARY_OP);
+        node->binaryOp.op = op;
+        node->binaryOp.left = left;
+        node->binaryOp.right = multiplicative();
+        
+        left = node;
+    }
+    
+    return left;
+}
+
+// Multiplicative expression: primary (('*' | '/') primary)*
+ASTNode* multiplicative() {
+    ASTNode* left = primary();
+    
+    while (current && current->type == OPERATOR && 
+           (current->value[0] == '*' || current->value[0] == '/')) {
+        char op = current->value[0];
+        nextToken();
+        
+        ASTNode* node = allocateNode(NODE_BINARY_OP);
+        node->binaryOp.op = op;
+        node->binaryOp.left = left;
+        node->binaryOp.right = primary();
+        
+        left = node;
+    }
+    
+    return left;
 }

@@ -14,8 +14,7 @@ void updateOrInsertSymbol(const char *name, int value, VariableType type) {
         symTable[index].type = type;
     } else {
         // Call the function from symbol_table.c
-        extern void insertSymbol(const char *name, int value, VariableType type);
-        insertSymbol(name, value, type);
+        insertSymbol(name, value, type);  // Remove the extern void declaration
     }
 }
 
@@ -81,6 +80,13 @@ ASTNode* statement() {
 
             char varName[MAX_VAR_NAME_LENGTH];
             strcpy(varName, current->value);
+            
+            // Check if variable is already declared
+            if (lookupSymbol(varName) != -1) {
+                printf("Error: Variable '%s' already declared\n", varName);
+                exit(1);
+            }
+            
             nextToken();
             if (current->type != ASSIGN) {
                 printf("Error: Expected '=' after variable name\n");
@@ -93,16 +99,14 @@ ASTNode* statement() {
                 exit(1);
             }
             nextToken();
+            
             node = allocateNode(NODE_VAR_DECL);
             strcpy(node->varDecl.name, varName);
+            node->varDecl.type = varType;  // Set the variable type
             node->varDecl.value = expr;
             
-            // Insert symbol with appropriate type
-            if (expr->type == NODE_STRING_LITERAL) {
-                updateOrInsertSymbol(varName, -1, TYPE_STRING);
-            } else {
-                updateOrInsertSymbol(varName, evaluateExpression(expr), TYPE_NUMBER);
-            }
+            // Insert the symbol with its type
+            insertSymbol(varName, 0, varType);
             
             printf("Variable declaration parsed successfully\n");
             break;

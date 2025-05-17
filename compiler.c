@@ -29,6 +29,9 @@ extern int isEmpty(struct Stack *stack);
  * @return void
  */
 void compileFile(const char* filename) {
+    // Initialize the symbol table at the start of compilation
+    initSymbolTable();
+    
     FILE *file = fopen(filename, "r");
     if (!file) {
         printf("Error: Could not open file '%s'\n", filename);
@@ -52,7 +55,7 @@ void compileFile(const char* filename) {
     ASTNode* prevNode = NULL;
     astHead = NULL;  // Reset AST head
     
-    while (current && current->type != END && statementCount < MAX_STATEMENTS) {
+    while (current && current->type != END_OF_FILE && statementCount < MAX_STATEMENTS) {
         ASTNode* node = statement();
         if (!node) {
             printf("Warning: statement() returned NULL\n");

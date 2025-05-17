@@ -556,7 +556,7 @@ YY_DECL
 	register char *yy_cp, *yy_bp;
 	register int yy_act;
 
-#line 41 "lexer.l"
+#line 42 "lexer.l"
 
 #line 562 "lex.yy.c"
 
@@ -643,7 +643,7 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-#line 42 "lexer.l"
+#line 43 "lexer.l"
 { 
                 if (lookupSymbol(yytext) != -1) {
                     printf("Error: Keyword '%s' is reserved and cannot be redefined\n", yytext);
@@ -655,9 +655,8 @@ YY_RULE_SETUP
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
-#line 50 "lexer.l"
+#line 51 "lexer.l"
 {
-                // Remove the quotes from the string
                 char value[100];
                 strncpy(value, yytext + 1, strlen(yytext) - 2);
                 value[strlen(yytext) - 2] = '\0';
@@ -707,6 +706,10 @@ YY_RULE_SETUP
                     addToken(PRINT, yytext);
                     printf("TOKEN: PRINT, VALUE: %s\n", yytext);
                 }
+                else if (strcmp(yytext, "true") == 0 || strcmp(yytext, "false") == 0) {
+                    addToken(BOOLEAN_LITERAL, yytext);
+                    printf("TOKEN: BOOLEAN_LITERAL, VALUE: %s\n", yytext);
+                }
                 else {
                     addToken(ID, yytext);
                     printf("TOKEN: ID, VALUE: %s\n", yytext);
@@ -715,77 +718,77 @@ YY_RULE_SETUP
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 102 "lexer.l"
+#line 106 "lexer.l"
 { addToken(NUMBER, yytext); printf("TOKEN: NUMBER, VALUE: %s\n", yytext); }  
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 103 "lexer.l"
+#line 107 "lexer.l"
 { addToken(ASSIGN, yytext); printf("TOKEN: ASSIGN, VALUE: %s\n", yytext); }  
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
-#line 104 "lexer.l"
+#line 108 "lexer.l"
 { addToken(OPERATOR, yytext); printf("TOKEN: OPERATOR, VALUE: %s\n", yytext); }  
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 105 "lexer.l"
+#line 109 "lexer.l"
 { addToken(SEMICOLON, yytext); printf("TOKEN: SEMICOLON, VALUE: %s\n", yytext); }  
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 106 "lexer.l"
+#line 110 "lexer.l"
 { addToken(COMMA, yytext); printf("TOKEN: COMMA, VALUE: %s\n", yytext); }  
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
-#line 108 "lexer.l"
+#line 112 "lexer.l"
 { addToken(LBRACE, yytext); printf("TOKEN: LBRACE, VALUE: %s\n", yytext); }
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 109 "lexer.l"
+#line 113 "lexer.l"
 { addToken(RBRACE, yytext); printf("TOKEN: RBRACE, VALUE: %s\n", yytext); }
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 110 "lexer.l"
+#line 114 "lexer.l"
 { addToken(LPAREN, yytext); printf("TOKEN: LPAREN, VALUE: %s\n", yytext); }
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
-#line 111 "lexer.l"
+#line 115 "lexer.l"
 { addToken(RPAREN, yytext); printf("TOKEN: RPAREN, VALUE: %s\n", yytext); }
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
-#line 113 "lexer.l"
+#line 117 "lexer.l"
 { addToken(RELOP, yytext); printf("TOKEN: RELOP, VALUE: %s\n", yytext); }  
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
-#line 114 "lexer.l"
+#line 118 "lexer.l"
 { addToken(AND, yytext); printf("TOKEN: AND, VALUE: %s\n", yytext); }  
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
-#line 115 "lexer.l"
+#line 119 "lexer.l"
 { addToken(OR, yytext); printf("TOKEN: OR, VALUE: %s\n", yytext); }  
 	YY_BREAK
 case 16:
 YY_RULE_SETUP
-#line 116 "lexer.l"
+#line 120 "lexer.l"
 { printf("Skipping comment: %s\n", yytext); }  
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
-#line 118 "lexer.l"
+#line 122 "lexer.l"
 { /* Do nothing */ }  
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
-#line 120 "lexer.l"
+#line 123 "lexer.l"
 { 
     printf("ERROR: Unrecognized character '%s'\n", yytext); 
     exit(0); 
@@ -793,10 +796,10 @@ YY_RULE_SETUP
 	YY_BREAK
 case 19:
 YY_RULE_SETUP
-#line 125 "lexer.l"
+#line 128 "lexer.l"
 ECHO;
 	YY_BREAK
-#line 800 "lex.yy.c"
+#line 803 "lex.yy.c"
 case YY_STATE_EOF(INITIAL):
 	yyterminate();
 
@@ -1682,7 +1685,7 @@ int main()
 	return 0;
 	}
 #endif
-#line 125 "lexer.l"
+#line 128 "lexer.l"
 
 
 int yywrap() { return 1; }

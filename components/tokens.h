@@ -5,29 +5,34 @@
 
 // Token types
 typedef enum {
+    UNKNOWN,
     NUMBER,
     ID,
     OPERATOR,
-    ASSIGN,
-    SEMICOLON,
-    LBRACE,
-    RBRACE,
+    LOGICAL_OP,
+    RELATIONAL_OP,
     LPAREN,
     RPAREN,
+    LBRACE,
+    RBRACE,
+    SEMICOLON,
+    COMMA,
+    ASSIGN,
     IF,
     ELSE,
     WHILE,
-    FOR,
     DO,
+    FOR,
     FUNC,
     CALL,
-    COMMA,
-    AND,
-    OR,
-    RELOP,
+    RETURN,
     VAR,
     PRINT,
     STRING_LITERAL,
+    BOOLEAN_LITERAL,
+    AND,
+    OR,
+    RELOP,
     END
 } TokenType;
 
@@ -48,3 +53,5 @@ extern Token* head;
 extern Token* current;
 
 #endif // TOKENS_H
+
+#define END_OF_FILE 999

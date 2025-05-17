@@ -170,7 +170,13 @@ void visualizeAST(ASTNode* node, int depth) {
             break;
             
         case NODE_COMPARISON_OP:
-            printf("COMPARISON_OP\n");
+            printf("COMPARISON_OP: %s\n", node->compOp.op);
+            printIndent(depth);
+            printf("LEFT:\n");
+            visualizeAST(node->compOp.left, depth + 1);
+            printIndent(depth);
+            printf("RIGHT:\n");
+            visualizeAST(node->compOp.right, depth + 1);
             break;
             
         case NODE_PRINT:

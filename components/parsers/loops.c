@@ -10,60 +10,66 @@
  * @return The parsed while loop
  */
 ASTNode* loop() {
-    match(WHILE);
-
-    // Check for '('
-    if (!current || current->type != LPAREN) {
-        printf("Syntax Error: Expected '(' after 'while'\n");
+    // Consume the 'while' token
+    nextToken();
+    
+    // Expect and consume the opening parenthesis
+    if (current->type != LPAREN) {
+        printf("Error: Expected '(' after 'while'\n");
         exit(1);
     }
-    match(LPAREN);
-
-    // Parse the loop condition
-    ASTNode *cond = parseCondition(1);
-    if (!cond) {
-        printf("Syntax Error: Invalid condition in while loop\n");
+    nextToken();
+    
+    // Parse the condition expression
+    ASTNode* condition = parseCondition(1);  // Use parseCondition instead of parseExpression
+    
+    // Expect and consume the closing parenthesis
+    if (current->type != RPAREN) {
+        printf("Error: Expected ')' after condition in while loop\n");
         exit(1);
     }
-
-    // Check for ')'
-    if (!current || current->type != RPAREN) {
-        printf("Syntax Error: Expected ')' after condition in while loop\n");
+    nextToken();
+    
+    // Expect and consume the opening brace
+    if (current->type != LBRACE) {
+        printf("Error: Expected '{' after while condition\n");
         exit(1);
     }
-    match(RPAREN);
-
-    // Check for '{'
-    if (!current || current->type != LBRACE) {
-        printf("Syntax Error: Expected '{' before loop body\n");
+    nextToken();
+    
+    // Parse the body of the while loop - multiple statements
+    ASTNode* body = NULL;
+    ASTNode* current_stmt = NULL;
+    
+    while (current && current->type != RBRACE) {
+        ASTNode* stmt = statement();
+        
+        if (!body) {
+            body = stmt;
+            current_stmt = stmt;
+        } else {
+            current_stmt->next = stmt;
+            current_stmt = stmt;
+        }
+    }
+    
+    // Expect and consume the closing brace
+    if (current->type != RBRACE) {
+        printf("Error: Expected '}' after while body\n");
         exit(1);
     }
-    match(LBRACE);
-
-    // Parse the loop body
-    ASTNode *body = statement();
-    if (!body) {
-        printf("Syntax Error: Invalid statement in while loop body\n");
-        exit(1);
-    }
-
-    // Check for '}'
-    if (!current || current->type != RBRACE) {
-        printf("Syntax Error: Expected '}' after loop body\n");
-        exit(1);
-    }
-    match(RBRACE);
-
-    // Construct the loop AST node
-    ASTNode *node = allocateNode(NODE_WHILE);
+    nextToken();
+    
+    // Create the while loop node
+    ASTNode* node = allocateNode(NODE_WHILE);
     if (!node) {
-        printf("Memory Error: Failed to allocate memory for while loop node\n");
+        printf("Memory Error: Failed to allocate memory for while node\n");
         exit(1);
     }
-
-    node->whileNode.condition = cond;
+    
+    node->whileNode.condition = condition;
     node->whileNode.body = body;
-
+    
     return node;
 }
 

@@ -1,5 +1,5 @@
 #include "semantic.h"
-#include "components/generator/codegen.c"
+#include "components/generator/codegen.h"
 #include "components/ast.h"
 #include "components/symbol_table.h"
 #include <stdio.h>
@@ -12,11 +12,14 @@ int semanticVisitedCount = 0;
 
 // Check if a node has been visited before
 int semanticHasVisited(ASTNode* node) {
+    printf("Checking if node %p has been visited before\n", (void*)node);
     for (int i = 0; i < semanticVisitedCount; i++) {
         if (semanticVisitedNodes[i] == node) {
+            printf("Node %p has been visited before\n", (void*)node);
             return 1;
         }
     }
+    printf("Node %p has not been visited before\n", (void*)node);
     return 0;
 }
 
@@ -32,12 +35,35 @@ void semanticResetVisited() {
     semanticVisitedCount = 0;
 }
 
+// Helper function to convert type to string
+const char* typeToString(int type) {
+    switch(type) {
+        case TYPE_NUMBER: return "number";
+        case TYPE_STRING: return "string";
+        case TYPE_BOOLEAN: return "boolean";
+        default: return "unknown";
+    }
+}
+
+// Add this function at the top of semantic.c
+void dumpSymbolTable() {
+    printf("=== SYMBOL TABLE DUMP ===\n");
+    for (int i = 0; i < symCount; i++) {
+        printf("Symbol[%d]: name='%s', type=%d, value=%d\n", 
+               i, symTable[i].name, symTable[i].type, symTable[i].value);
+    }
+    printf("========================\n");
+}
+
 // Perform semantic analysis on the AST
 void checkSemantic(ASTNode *node) {
     if (!node) {
         printf("Warning: Null node encountered in semantic analysis\n");
         return;
     }
+
+    // Dump symbol table at the start of each node check
+    dumpSymbolTable();
 
     // Check for circular references
     if (semanticHasVisited(node)) {
@@ -59,14 +85,17 @@ void checkSemantic(ASTNode *node) {
             }
             printf("Variable '%s' found in symbol table\n", node->assign.name);
             
-            // Check type compatibility - be careful with this
+            // Check type compatibility
             if (node->assign.expr) {
                 int exprType = getExprType(node->assign.expr);
                 int varType = getSymbolType(node->assign.name);
                 printf("Variable type: %d, Expression type: %d\n", varType, exprType);
                 
-                if (varType != exprType) {
-                    printf("Semantic Error: Type mismatch in assignment to '%s'\n", node->assign.name);
+                if (varType != exprType && exprType != TYPE_UNKNOWN) {
+                    printf("Semantic Error: Type mismatch in assignment to '%s'. Cannot assign %s to %s\n", 
+                           node->assign.name, 
+                           typeToString(exprType), 
+                           typeToString(varType));
                     exit(1);
                 }
             } else {
@@ -80,7 +109,40 @@ void checkSemantic(ASTNode *node) {
 
         case NODE_VAR_DECL:
             printf("Checking variable declaration: %s\n", node->varDecl.name);
+            
+            // Skip the duplicate declaration check since we've already inserted
+            // these symbols during parsing
+            /*
+            // Check if variable is already declared
+            if (lookupSymbol(node->varDecl.name) != -1) {
+                // Add debug output to see what's in the symbol table
+                printf("Debug: Symbol table contents before error:\n");
+                for (int i = 0; i < symCount; i++) {
+                    printf("  Symbol[%d]: name='%s', type=%d, value=%d\n", 
+                           i, symTable[i].name, symTable[i].type, symTable[i].value);
+                }
+                
+                printf("Semantic Error: Variable '%s' already declared\n", node->varDecl.name);
+                exit(1);
+            }
+            */
+            
+            // Just check type compatibility for the initialization
             if (node->varDecl.value) {
+                // Check type compatibility for variable declaration
+                int declaredType = node->varDecl.type;
+                int valueType = getExprType(node->varDecl.value);
+                
+                printf("Variable type: %d, Value type: %d\n", declaredType, valueType);
+                
+                if (declaredType != valueType && valueType != TYPE_UNKNOWN) {
+                    printf("Semantic Error: Type mismatch in declaration of '%s'. Cannot assign %s to %s\n", 
+                           node->varDecl.name, 
+                           typeToString(valueType), 
+                           typeToString(declaredType));
+                    exit(1);
+                }
+                
                 checkSemantic(node->varDecl.value);
             }
             break;
@@ -246,4 +308,24 @@ void analyzeAndGenerateCode(ASTNode *root, const char *outputFile) {
     generateAssembly(outputFile);
     
     printf("Code generation completed successfully.\n");
+}
+
+int getExprType(ASTNode *expr) {
+    if (!expr) return TYPE_UNKNOWN;
+    
+    switch (expr->type) {
+        case NODE_NUMBER:
+            return TYPE_NUMBER;
+        case NODE_STRING_LITERAL:
+            return TYPE_STRING;
+        case NODE_BOOLEAN_LITERAL:
+            return TYPE_BOOLEAN;
+        case NODE_VAR_REF:
+            return getSymbolType(expr->varRef.name);
+        case NODE_BINARY_OP:
+            // Binary operations typically result in numbers
+            return TYPE_NUMBER;
+        default:
+            return TYPE_UNKNOWN;
+    }
 }

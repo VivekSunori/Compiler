@@ -37,6 +37,7 @@ OR          "||"
 ID          [a-zA-Z_][a-zA-Z0-9_]*
 RELOP       "=="|"!="|"<"|">"|"<="|">="
 STRING      \"[^\"]*\"
+BOOLEAN     "true"|"false"
 
 %%
 {VAR}       { 
@@ -48,7 +49,6 @@ STRING      \"[^\"]*\"
                 printf("TOKEN: KEYWORD, VALUE: %s\n", yytext); 
             }  
 {STRING}    {
-                // Remove the quotes from the string
                 char value[100];
                 strncpy(value, yytext + 1, strlen(yytext) - 2);
                 value[strlen(yytext) - 2] = '\0';
@@ -94,6 +94,10 @@ STRING      \"[^\"]*\"
                     addToken(PRINT, yytext);
                     printf("TOKEN: PRINT, VALUE: %s\n", yytext);
                 }
+                else if (strcmp(yytext, "true") == 0 || strcmp(yytext, "false") == 0) {
+                    addToken(BOOLEAN_LITERAL, yytext);
+                    printf("TOKEN: BOOLEAN_LITERAL, VALUE: %s\n", yytext);
+                }
                 else {
                     addToken(ID, yytext);
                     printf("TOKEN: ID, VALUE: %s\n", yytext);
@@ -116,7 +120,6 @@ STRING      \"[^\"]*\"
 {COMMENT}       { printf("Skipping comment: %s\n", yytext); }  
 
 {WHITESPACE}    { /* Do nothing */ }  
-
 . { 
     printf("ERROR: Unrecognized character '%s'\n", yytext); 
     exit(0); 

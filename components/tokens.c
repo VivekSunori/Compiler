@@ -34,27 +34,34 @@ void addToken(TokenType type, const char* value) {
 // Convert token type to string
 const char* tokenTypeToString(TokenType type) {
     switch (type) {
+        case UNKNOWN: return "UNKNOWN";
         case NUMBER: return "NUMBER";
         case ID: return "ID";
         case OPERATOR: return "OPERATOR";
-        case ASSIGN: return "ASSIGN";
-        case SEMICOLON: return "SEMICOLON";
-        case LBRACE: return "LBRACE";
-        case RBRACE: return "RBRACE";
+        case LOGICAL_OP: return "LOGICAL_OP";
+        case RELATIONAL_OP: return "RELATIONAL_OP";
         case LPAREN: return "LPAREN";
         case RPAREN: return "RPAREN";
+        case LBRACE: return "LBRACE";
+        case RBRACE: return "RBRACE";
+        case SEMICOLON: return "SEMICOLON";
+        case COMMA: return "COMMA";
+        case ASSIGN: return "ASSIGN";
         case IF: return "IF";
         case ELSE: return "ELSE";
         case WHILE: return "WHILE";
-        case FOR: return "FOR";
         case DO: return "DO";
+        case FOR: return "FOR";
         case FUNC: return "FUNC";
         case CALL: return "CALL";
-        case COMMA: return "COMMA";
+        case RETURN: return "RETURN";
+        case VAR: return "VAR";
+        case PRINT: return "PRINT";
+        case STRING_LITERAL: return "STRING_LITERAL";
+        case BOOLEAN_LITERAL: return "BOOLEAN_LITERAL";
         case AND: return "AND";
         case OR: return "OR";
         case RELOP: return "RELOP";
-        case VAR: return "VAR";
         case END: return "END";
         default: return "UNKNOWN";
     }
