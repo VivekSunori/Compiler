@@ -214,6 +214,9 @@ void writeNodeToJSON(ASTNode* node, FILE* file, int isLast) {
             writeNodeToJSON(node->print.expr, file, 0);
             break;
             
+        case NODE_UNKNOWN:
+            fprintf(file, "  \"type\": \"UNKNOWN\"");
+            break;
         default:
             fprintf(file, "  \"type\": \"UNKNOWN\",\n");
             fprintf(file, "  \"typeValue\": %d", node->type);
