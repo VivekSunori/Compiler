@@ -75,83 +75,85 @@ void writeNodeToJSON(ASTNode* node, FILE* file, int isLast) {
         fprintf(file, "null");
         return;
     }
-    
+
     int nodeID = getNodeID(node);
-    
+
     // Check if this node has been visited before
     if (jsonHasBeenVisited(node)) {
         fprintf(file, "{ \"type\": \"REFERENCE\", \"id\": %d }", nodeID);
         return;
     }
-    
+
     // Mark this node as visited
     jsonMarkVisited(node);
-    
+
     fprintf(file, "{\n");
     fprintf(file, "  \"id\": %d,\n", nodeID);
-    
+
     switch (node->type) {
         case NODE_NUMBER:
             fprintf(file, "  \"type\": \"NUMBER\",\n");
             fprintf(file, "  \"value\": %d", node->number);
             break;
-            
+
         case NODE_BINARY_OP:
             fprintf(file, "  \"type\": \"BINARY_OP\",\n");
             fprintf(file, "  \"operator\": \"%c\",\n", node->binaryOp.op);
             fprintf(file, "  \"left\": ");
             writeNodeToJSON(node->binaryOp.left, file, 0);
-            fprintf(file, ",\n");
+            // Removed explicit comma here to avoid double commas
+            // fprintf(file, ",\n");
+            fprintf(file, "\n");
             fprintf(file, "  \"right\": ");
-            writeNodeToJSON(node->binaryOp.right, file, 0);
+            writeNodeToJSON(node->binaryOp.right, file, 1);
             break;
-            
+
         case NODE_ASSIGN:
             fprintf(file, "  \"type\": \"ASSIGN\",\n");
             fprintf(file, "  \"name\": \"%s\",\n", node->assign.name);
             fprintf(file, "  \"expr\": ");
-            writeNodeToJSON(node->assign.expr, file, 0);
+            writeNodeToJSON(node->assign.expr, file, 1);
             break;
-            
+
         case NODE_VAR_DECL:
             fprintf(file, "  \"type\": \"VAR_DECL\",\n");
             fprintf(file, "  \"name\": \"%s\",\n", node->varDecl.name);
             fprintf(file, "  \"value\": ");
-            writeNodeToJSON(node->varDecl.value, file, 0);
+            writeNodeToJSON(node->varDecl.value, file, 1);
             break;
-            
+
         case NODE_IF:
             fprintf(file, "  \"type\": \"IF\",\n");
             fprintf(file, "  \"condition\": ");
             writeNodeToJSON(node->ifNode.condition, file, 0);
             fprintf(file, ",\n");
             fprintf(file, "  \"then\": ");
-            writeNodeToJSON(node->ifNode.thenStmt, file, 0);
+            writeNodeToJSON(node->ifNode.thenStmt, file, node->ifNode.elseStmt == NULL);
             if (node->ifNode.elseStmt) {
                 fprintf(file, ",\n");
                 fprintf(file, "  \"else\": ");
-                writeNodeToJSON(node->ifNode.elseStmt, file, 0);
+                writeNodeToJSON(node->ifNode.elseStmt, file, 1);
             }
             break;
-            
+
         case NODE_WHILE:
             fprintf(file, "  \"type\": \"WHILE\",\n");
             fprintf(file, "  \"condition\": ");
             writeNodeToJSON(node->whileNode.condition, file, 0);
             fprintf(file, ",\n");
             fprintf(file, "  \"body\": ");
-            writeNodeToJSON(node->whileNode.body, file, 0);
+            writeNodeToJSON(node->whileNode.body, file, 1);
             break;
-            
+
         case NODE_DO_WHILE:
             fprintf(file, "  \"type\": \"DO_WHILE\",\n");
             fprintf(file, "  \"body\": ");
             writeNodeToJSON(node->doWhileNode.body, file, 0);
             fprintf(file, ",\n");
             fprintf(file, "  \"condition\": ");
-            writeNodeToJSON(node->doWhileNode.condition, file, 0);
+            writeNodeToJSON(node->doWhileNode.condition, file, 1);
             break;
-            
+
         case NODE_FOR:
             fprintf(file, "  \"type\": \"FOR\",\n");
             fprintf(file, "  \"init\": ");
@@ -164,9 +166,9 @@ void writeNodeToJSON(ASTNode* node, FILE* file, int isLast) {
             writeNodeToJSON(node->forNode.increment, file, 0);
             fprintf(file, ",\n");
             fprintf(file, "  \"body\": ");
-            writeNodeToJSON(node->forNode.body, file, 0);
+            writeNodeToJSON(node->forNode.body, file, 1);
             break;
-            
+
         case NODE_FUNC_DEF:
             fprintf(file, "  \"type\": \"FUNC_DEF\",\n");
             fprintf(file, "  \"name\": \"%s\",\n", node->funcDef.name);
@@ -174,46 +176,79 @@ void writeNodeToJSON(ASTNode* node, FILE* file, int isLast) {
             writeNodeToJSON(node->funcDef.params, file, 0);
             fprintf(file, ",\n");
             fprintf(file, "  \"body\": ");
-            writeNodeToJSON(node->funcDef.body, file, 0);
+            writeNodeToJSON(node->funcDef.body, file, 1);
             break;
-            
+
         case NODE_FUNC_CALL:
             fprintf(file, "  \"type\": \"FUNC_CALL\",\n");
             fprintf(file, "  \"name\": \"%s\",\n", node->funcCall.name);
             fprintf(file, "  \"args\": ");
-            writeNodeToJSON(node->funcCall.args, file, 0);
+            writeNodeToJSON(node->funcCall.args, file, 1);
             break;
-            
+
         case NODE_LOGICAL_OP:
             fprintf(file, "  \"type\": \"LOGICAL_OP\",\n");
             fprintf(file, "  \"operator\": \"%s\",\n", node->logicalOp.op);
             fprintf(file, "  \"left\": ");
             writeNodeToJSON(node->logicalOp.left, file, 0);
-            fprintf(file, ",\n");
+            // Removed explicit comma here to avoid double commas
+            // fprintf(file, ",\n");
+            fprintf(file, "\n");
             fprintf(file, "  \"right\": ");
-            writeNodeToJSON(node->logicalOp.right, file, 0);
+            writeNodeToJSON(node->logicalOp.right, file, 1);
             break;
-            
+
         case NODE_RELATIONAL_OP:
             fprintf(file, "  \"type\": \"RELATIONAL_OP\",\n");
             fprintf(file, "  \"operator\": \"%s\",\n", node->relOp.op);
             fprintf(file, "  \"left\": ");
             writeNodeToJSON(node->relOp.left, file, 0);
-            fprintf(file, ",\n");
+            // Removed explicit comma here to avoid double commas
+            // fprintf(file, ",\n");
+            fprintf(file, "\n");
             fprintf(file, "  \"right\": ");
-            writeNodeToJSON(node->relOp.right, file, 0);
+            writeNodeToJSON(node->relOp.right, file, 1);
             break;
-            
+
         case NODE_COMPARISON_OP:
-            fprintf(file, "  \"type\": \"COMPARISON_OP\"");
+            fprintf(file, "  \"type\": \"COMPARISON_OP\",\n");
+            fprintf(file, "  \"operator\": \"%s\",\n", node->compOp.op);
+            fprintf(file, "  \"left\": ");
+            writeNodeToJSON(node->compOp.left, file, 0);
+            // Removed explicit comma here to avoid double commas
+            // fprintf(file, ",\n");
+            fprintf(file, "\n");
+            fprintf(file, "  \"right\": ");
+            writeNodeToJSON(node->compOp.right, file, 1);
             break;
-            
+
         case NODE_PRINT:
             fprintf(file, "  \"type\": \"PRINT\",\n");
             fprintf(file, "  \"expr\": ");
-            writeNodeToJSON(node->print.expr, file, 0);
+            writeNodeToJSON(node->print.expr, file, 1);
             break;
-            
+
+        case NODE_STRING_LITERAL:
+            fprintf(file, "  \"type\": \"STRING_LITERAL\",\n");
+            fprintf(file, "  \"value\": \"%s\"", node->stringLiteral.value);
+            break;
+
+        case NODE_BOOLEAN_LITERAL:
+            fprintf(file, "  \"type\": \"BOOLEAN_LITERAL\",\n");
+            fprintf(file, "  \"value\": \"%s\"", node->booleanLiteral.value);
+            break;
+
+        case NODE_VAR_REF:
+            fprintf(file, "  \"type\": \"VAR_REF\",\n");
+            fprintf(file, "  \"name\": \"%s\"", node->varRef.name);
+            break;
+
+        case NODE_RETURN:
+            fprintf(file, "  \"type\": \"RETURN\",\n");
+            fprintf(file, "  \"expr\": ");
+            writeNodeToJSON(node->assign.expr, file, 1);
+            break;
+
         case NODE_UNKNOWN:
             fprintf(file, "  \"type\": \"UNKNOWN\"");
             break;
@@ -222,14 +257,15 @@ void writeNodeToJSON(ASTNode* node, FILE* file, int isLast) {
             fprintf(file, "  \"typeValue\": %d", node->type);
             break;
     }
-    
+
     // Add next node if it exists
     if (node->next) {
         fprintf(file, ",\n");
         fprintf(file, "  \"next\": ");
-        writeNodeToJSON(node->next, file, 0);
+        // Pass isLast as 1 only if current node is last, else 0
+        writeNodeToJSON(node->next, file, isLast ? 1 : 0);
     }
-    
+
     fprintf(file, "\n}");
     if (!isLast) {
         fprintf(file, ",");
@@ -286,7 +322,8 @@ void exportASTsToSingleJSON(ASTNode** nodes, int count, const char* filename) {
     
     fprintf(file, "  ]\n");
     fprintf(file, "}\n");
-    
+
     fclose(file);
     printf("All ASTs exported to %s\n", filename);
 }
+
