@@ -10,10 +10,7 @@
 *.py
 *.pl
 *.rb
-*.js
 *.ts
-*.html
-*.css
 *.php
 *.java
 *.class
@@ -29,3 +26,13 @@
 *.conf
 *.properties
 *.asm
+
+# Ignore HTML, CSS, JS globally...
+*.html
+*.css
+*.js
+
+# ...but allow them in the visualizer folder
+!ast_visualizer_tree/*.html
+!ast_visualizer_tree/*.css
+!ast_visualizer_tree/*.js
