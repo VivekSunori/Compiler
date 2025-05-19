@@ -116,6 +116,18 @@ void compileFile(const char* filename) {
         // Update prevNode for the next iteration
         prevNode = node;
     }
+    
+    // Export AST JSON after parsing statements
+    #include "components/ast_json_exporter.h"
+
+    // Create directory for JSON output if it doesn't exist
+    #ifdef _WIN32
+    system("mkdir ast_json 2>nul");
+    #else
+    system("mkdir -p ast_json");
+    #endif
+
+    exportASTsToSingleJSON(statements, statementCount, "ast_json/ast_all_statements.json");
 
     // Check if all braces and parentheses are properly closed
     if (!isEmpty(&bracesStack)) {
