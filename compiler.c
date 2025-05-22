@@ -98,6 +98,17 @@ void compileFile(const char* filename) {
         }
         prevNode = node;
     }
+
+    #include "components/ast_json_exporter.h"
+
+    #ifdef _WIN32
+    system("mkdir ast_json 2>nul");
+    #else
+    system("mkdir -p ast_json");
+    #endif
+
+    exportASTsToSingleJSON(statements, statementCount, "ast_json/ast_all_statements.json");
+
     if (!isEmpty(&bracesStack)) {
         printf("Syntax Error: Unclosed braces '{' detected\n");
         exit(1);
